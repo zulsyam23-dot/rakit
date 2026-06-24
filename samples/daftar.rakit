@@ -1,0 +1,50 @@
+// Sample: Daftar dengan Keyed Reconciliation
+// Demonstrasi key-based list rendering dengan use_state + map
+
+impor "std/dom" { render }
+impor "std/hooks" { state }
+
+tipe Item = {
+    id: String,
+    teks: String,
+    selesai: Bool,
+}
+
+komponen DaftarDinamis() {
+    keadaan(items, aturItems) = [
+        Item { id: "a", teks: "Belajar Rakit", selesai: salah },
+        Item { id: "b", teks: "Buat aplikasi", selesai: salah },
+        Item { id: "c", teks: "Rilis ke publik", selesai: salah },
+    ]
+
+    fungsi hapus(id: String) {
+        aturItems(items.filter((i) => i.id != id))
+    }
+
+    fungsi toggle(id: String) {
+        aturItems(items.petakan((i) => {
+            jika (i.id == id) Item { ...i, selesai: !i.selesai } lain i
+        }))
+    }
+
+    tampilkan {
+        <div kelas="daftar">
+            <h1>Daftar Tugas</h1>
+            <ul>
+                {items.petakan((item) => {
+                    <li key={item.id} kelas={jika item.selesai "selesai" lain ""}>
+                        <input type="checkbox"
+                               checked={item.selesai}
+                               onChange={() => toggle(item.id)} />
+                        <span>{item.teks}</span>
+                        <button onClick={() => hapus(item.id)}>Hapus</button>
+                    </li>
+                })}
+            </ul>
+        </div>
+    }
+}
+
+fungsi main() {
+    render(<DaftarDinamis />, "app")
+}

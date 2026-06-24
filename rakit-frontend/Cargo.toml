@@ -1,0 +1,9 @@
+[package]
+name = "rakit-frontend"
+version = "0.1.0"
+edition = "2021"
+description = "Rakit lexer and parser — Bahasa Indonesia keywords, JSX-like syntax"
+
+[dependencies]
+rakit-core = { path = "../rakit-core" }
+rakit-ir-ast = { path = "../rakit-ir-ast" }

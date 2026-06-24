@@ -1,0 +1,26 @@
+// Contoh aplikasi desktop Rakit dengan Win32 backend
+// build: rakit build --target win32
+
+komponen App() {
+    keadaan(hitung, aturHitung) = 0;
+
+    tampilkan {
+        <div className="app-container">
+            <h1>"Aplikasi Desktop Rakit"</h1>
+            <p>"Ini adalah aplikasi desktop native dengan Win32."</p>
+            <div className="counter-section">
+                <button onClick={() => aturHitung(hitung - 1)}>"-"</button>
+                <span>" " + {hitung} + " "</span>
+                <button onClick={() => aturHitung(hitung + 1)}>"+"</button>
+            </div>
+            {jika (hitung > 10) {
+                <p>"Hitungan sudah lebih dari 10!"</p>
+            }}
+        </div>
+    }
+}
+
+fungsi main() -> I32 {
+    render(<App />)
+    0
+}

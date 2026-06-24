@@ -1,0 +1,3 @@
+fungsi tambah(a: Angka, b: Angka) -> Angka {
+    berhenti a + b
+}

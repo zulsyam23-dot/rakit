@@ -1,0 +1,5 @@
+fungsi utama() {
+    jika benar {
+        cetak("halo")
+    }
+}

@@ -1,0 +1,32 @@
+// test.rakit — Contoh test file untuk testing framework Rakit
+dari "rakit/test" ambil { test, assert_eq, assert_true };
+
+// -- FUNGSI YANG AKAN DI-TEST --
+fungsi tambah(a: I32, b: I32) -> I32 {
+    a + b
+}
+
+fungsi sapa(nama: String) -> String {
+    "Halo, " + nama + "!"
+}
+
+// -- TEST CASES --
+test("tambah: 2 + 3 harus 5", () => {
+    konstan hasil = tambah(2, 3);
+    assert_eq(hasil, 5, "2 + 3 seharusnya 5");
+});
+
+test("tambah: bilangan negatif", () => {
+    konstan hasil = tambah(-1, 1);
+    assert_eq(hasil, 0, "-1 + 1 seharusnya 0");
+});
+
+test("sapa: nama harus disapa", () => {
+    konstan hasil = sapa("Rakit");
+    assert_eq(hasil, "Halo, Rakit!", "Sapa harus sesuai");
+});
+
+test("sapa: string kosong", () => {
+    konstan hasil = sapa("");
+    assert_eq(hasil, "Halo, !", "String kosong tetap disapa");
+});

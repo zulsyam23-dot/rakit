@@ -1,0 +1,39 @@
+// Contoh aplikasi web Rakit dengan WASM/DOM backend
+// build: rakit build --target wasm
+
+komponen App() {
+    keadaan(nama, aturNama) = "";
+    keadaan(dikirim, aturDikirim) = salah;
+
+    fungsi handleKirim(e: Event) -> Void {
+        e.cegahDefault();
+        aturDikirim(benar);
+        cetak("Dikirim: " + nama);
+    }
+
+    tampilkan {
+        <div className="app">
+            <h1>"Aplikasi Web Rakit"</h1>
+            <p>"Ini adalah aplikasi web dengan WASM."</p>
+            <form onSubmit={handleKirim}>
+                <input type="text"
+                       placeholder="Masukkan nama"
+                       value={nama}
+                       onChange={(e) => aturNama(e.target.value)} />
+                <button type="submit">"Kirim"</button>
+            </form>
+            {jika (dikirim) {
+                <div className="hasil">
+                    <p>"Halo, " + nama + "! Selamat datang di Rakit Web."</p>
+                </div>
+            } lain {
+                <p>"Silakan isi nama Anda."</p>
+            }}
+        </div>
+    }
+}
+
+fungsi main() -> I32 {
+    render(<App />)
+    0
+}

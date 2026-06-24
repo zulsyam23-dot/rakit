@@ -1,0 +1,11 @@
+[package]
+name = "rakit-pm"
+version = "0.1.0"
+edition = "2021"
+description = "Rakit package manager — registry, resolver, fetch, build"
+
+[dependencies]
+rakit-core = { path = "../rakit-core" }
+rakit-ir-hir = { path = "../rakit-ir-hir" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -1,0 +1,12 @@
+[package]
+name = "rakit-backend-gtk4"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rakit-ui = { path = "../rakit-ui" }
+rakit-runtime = { path = "../rakit-runtime" }
+rakit-vdom = { path = "../rakit-vdom" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk4 = { version = "0.7", features = ["v4_12"] }

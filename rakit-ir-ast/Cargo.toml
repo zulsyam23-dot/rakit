@@ -1,0 +1,9 @@
+[package]
+name = "rakit-ir-ast"
+version = "0.1.0"
+edition = "2021"
+description = "Rakit AST node definitions"
+
+[dependencies]
+rakit-core = { path = "../rakit-core" }
+serde = { version = "1", features = ["derive"] }

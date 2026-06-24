@@ -1,0 +1,48 @@
+// Sample: Server-Side Rendering (SSR)
+// Demonstrasi komponen yang di-render ke HTML string di server
+
+impor "std/ssr" { renderToString }
+impor "std/http" { Server, Request, Response }
+
+komponen Halaman(props: { judul: String, pengguna: String }) {
+    tampilkan {
+        <html>
+            <head>
+                <title>{props.judul}</title>
+                <style>
+                    body { font-family: sans-serif; padding: 2rem; }
+                    .header { background: #4a90d9; color: putih; padding: 1rem; }
+                    .konten { margin-top: 1rem; }
+                </style>
+            </head>
+            <body>
+                <div kelas="header">
+                    <h1>{props.judul}</h1>
+                    <p>Selamat datang, {props.pengguna}!</p>
+                </div>
+                <div kelas="konten">
+                    <p>Ini adalah halaman yang di-render di server.</p>
+                    <p>Rakit SSR menghasilkan HTML murni — cepat untuk SEO dan First Paint.</p>
+                </div>
+                <footer>
+                    <p>&copy; 2026 Rakit Language</p>
+                </footer>
+            </body>
+        </html>
+    }
+}
+
+fungsi handleRequest(req: Request) -> Response {
+    konstan html = renderToString(<Halaman judul="Rakit SSR" pengguna="Budi" />)
+    Response {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+        body: html,
+    }
+}
+
+fungsi main() {
+    konstan server = Server.buat(3000)
+    cetak("Server SSR Rakit jalan di http://localhost:3000")
+    server.dengarkan(handleRequest)
+}

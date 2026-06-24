@@ -1,0 +1,153 @@
+// ============================================
+// pengedger.rakit — useReducer Demo
+// ============================================
+// Demonstrasi penggunaan pengedger (useReducer)
+// untuk manajemen state kompleks.
+
+dari "rakit/ui" ambil { render, css };
+dari "rakit/cetak" ambil { cetak };
+
+tipe Aksi =
+    | { jenis: "tambah" }
+    | { jenis: "kurang", nilai: I32 }
+    | { jenis: "reset" };
+
+tipe Keadaan = { hitung: I32, riwayat: Array<I32> };
+
+fungsi reduksi(keadaan: Keadaan, aksi: Aksi) -> Keadaan {
+    cocok (aksi.jenis) {
+        kasus "tambah" => Keadaan {
+            hitung: keadaan.hitung + 1,
+            riwayat: [...keadaan.riwayat, keadaan.hitung + 1],
+        },
+        kasus "kurang" => Keadaan {
+            hitung: keadaan.hitung - aksi.nilai,
+            riwayat: [...keadaan.riwayat, keadaan.hitung - aksi.nilai],
+        },
+        kasus "reset" => Keadaan {
+            hitung: 0,
+            riwayat: [],
+        },
+        kasus _ => keadaan,
+    }
+}
+
+// -- KOMPONEN PENGHITUNG DENGAN REDUCER --
+komponen PenghitungReducer() {
+    pengedger(keadaan, kirim) = reduksi, { hitung: 0, riwayat: [] };
+
+    tampilkan {
+        <div className="penghitung">
+            <h2>"Penghitung dengan Reducer"</h2>
+            <p className="nilai">"Nilai: " + keadaan.hitung</p>
+            <div className="tombol">
+                <button onClick={() => kirim({ jenis: "tambah" })}>"+"</button>
+                <button onClick={() => kirim({ jenis: "kurang", nilai: 1 })}>"-"</button>
+                <button onClick={() => kirim({ jenis: "kurang", nilai: 5 })}>"-5"</button>
+                <button onClick={() => kirim({ jenis: "reset" })}>"Reset"</button>
+            </div>
+            <div className="riwayat">
+                <h3>"Riwayat:"</h3>
+                <ul>
+                    {keadaan.riwayat.petakan((nilai, indeks) => {
+                        <li key={indeks}>"Langkah " + indeks + ": " + nilai</li>
+                    })}
+                </ul>
+                {jika (keadaan.riwayat.panjang == 0) {
+                    <p>"Belum ada riwayat."</p>
+                }}
+            </div>
+        </div>
+    }
+}
+
+// -- KOMPONEN FORMULIR DENGAN REDUCER --
+tipe FormState = {
+    nama: String,
+    email: String,
+    pesan: String,
+    terkirim: Bool,
+};
+
+tipe FormAksi =
+    | { jenis: "aturNama", nilai: String }
+    | { jenis: "aturEmail", nilai: String }
+    | { jenis: "aturPesan", nilai: String }
+    | { jenis: "kirim" }
+    | { jenis: "reset" };
+
+fungsi formReduksi(state: FormState, aksi: FormAksi) -> FormState {
+    cocok (aksi.jenis) {
+        kasus "aturNama" => FormState { ...state, nama: aksi.nilai },
+        kasus "aturEmail" => FormState { ...state, email: aksi.nilai },
+        kasus "aturPesan" => FormState { ...state, pesan: aksi.nilai },
+        kasus "kirim" => FormState { ...state, terkirim: benar },
+        kasus "reset" => FormState {
+            nama: "",
+            email: "",
+            pesan: "",
+            terkirim: salah,
+        },
+        kasus _ => state,
+    }
+}
+
+komponen FormulirReducer() {
+    pengedger(state, kirim) = formReduksi, {
+        nama: "",
+        email: "",
+        pesan: "",
+        terkirim: salah,
+    };
+
+    tampilkan {
+        <div className="formulir">
+            <h2>"Formulir dengan Reducer"</h2>
+            {jika (state.terkirim) {
+                <div className="sukses">
+                    <p>"Formulir terkirim!"</p>
+                    <p>"Nama: " + state.nama</p>
+                    <p>"Email: " + state.email</p>
+                    <p>"Pesan: " + state.pesan</p>
+                    <button onClick={() => kirim({ jenis: "reset" })}>"Isi Lagi"</button>
+                </div>
+            } lain {
+                <form onSubmit={(e) => { e.cegahDefault(); kirim({ jenis: "kirim" }); }}>
+                    <label>
+                        "Nama:"
+                        <input type="text" value={state.nama}
+                               onChange={(e) => kirim({ jenis: "aturNama", nilai: e.target.value })} />
+                    </label>
+                    <label>
+                        "Email:"
+                        <input type="email" value={state.email}
+                               onChange={(e) => kirim({ jenis: "aturEmail", nilai: e.target.value })} />
+                    </label>
+                    <label>
+                        "Pesan:"
+                        <textarea value={state.pesan}
+                                  onChange={(e) => kirim({ jenis: "aturPesan", nilai: e.target.value })} />
+                    </label>
+                    <button type="submit">"Kirim"</button>
+                </form>
+            }}
+        </div>
+    }
+}
+
+// -- APLIKASI UTAMA --
+komponen App() {
+    tampilkan {
+        <div className="app">
+            <h1>"Demo Pengedger (useReducer)"</h1>
+            <PenghitungReducer />
+            <hr />
+            <FormulirReducer />
+        </div>
+    }
+}
+
+fungsi main() -> I32 {
+    render(<App />, document.getElementById("root"));
+    0
+}

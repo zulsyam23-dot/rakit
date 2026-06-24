@@ -1,0 +1,46 @@
+// async.rakit — Contoh penggunaan jalan/await
+// Menunjukkan komponen async dengan suspense
+
+dari "rakit/ui" ambil { render };
+dari "rakit/jaringan" ambil { fetch };
+dari "rakit/json" ambil { parseJSON };
+
+// -- TIPE DATA --
+tipe DataPengguna = {
+    id: I32,
+    nama: String,
+    email: String,
+};
+
+// -- CUSTOM HOOK: gunakanDataPengguna --
+fungsi gunakanDataPengguna(id: I32) -> DataPengguna {
+    jalan {
+        // Async operation — compiler meng-generate state machine
+        konstan response = await fetch("/api/pengguna/" + id);
+        konstan data: DataPengguna = parseJSON(response);
+
+        // Return data — otomatis render ulang saat selesai
+        data
+    } tangkap (err) {
+        // Error handling — render fallback error
+        lempar Error("Gagal memuat data: " + err);
+    }
+}
+
+// -- KOMPONEN WITH SUSPENSE --
+komponen ProfilPengguna(props: { id: I32 }) {
+    konstan pengguna = gunakanDataPengguna(props.id);
+
+    tampilkan {
+        <div className="profil">
+            <h2>{pengguna.nama}</h2>
+            <p>Email: {pengguna.email}</p>
+        </div>
+    }
+}
+
+// -- ENTRY POINT --
+fungsi main() -> I32 {
+    render(<ProfilPengguna id={1} />)
+    0
+}

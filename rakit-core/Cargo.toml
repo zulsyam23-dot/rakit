@@ -1,0 +1,8 @@
+[package]
+name = "rakit-core"
+version = "0.1.0"
+edition = "2021"
+description = "Rakit core types — Span, SourceMap, Diagnostic"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }

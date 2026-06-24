@@ -1,0 +1,10 @@
+[package]
+name = "rakit-bridge"
+version = "0.1.0"
+edition = "2021"
+description = "Rakit HIR → Brak IR bridge"
+
+[dependencies]
+rakit-core = { path = "../rakit-core" }
+rakit-ir-hir = { path = "../rakit-ir-hir" }
+serde = { version = "1", features = ["derive"] }

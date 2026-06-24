@@ -1,0 +1,7 @@
+[package]
+name = "rakit-vdom"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rakit-runtime = { path = "../rakit-runtime" }

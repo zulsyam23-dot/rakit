@@ -1,0 +1,12 @@
+[package]
+name = "benchmark"
+version = "0.1.0"
+edition = "2021"
+description = "Rakit benchmark suite"
+
+[dependencies]
+rakit-core = { path = "../rakit-core" }
+rakit-ir-hir = { path = "../rakit-ir-hir" }
+rakit-vdom = { path = "../rakit-vdom" }
+rakit-frontend = { path = "../rakit-frontend" }
+rakit-runtime = { path = "../rakit-runtime" }

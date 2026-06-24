@@ -1,0 +1,11 @@
+[package]
+name = "rakit-opt"
+version = "0.1.0"
+edition = "2021"
+description = "Rakit optimizer — inline, DCE, constant propagation, tree shaking, memo hoist, async opt"
+
+[dependencies]
+rakit-core = { path = "../rakit-core" }
+rakit-ir-hir = { path = "../rakit-ir-hir" }
+rakit-vdom = { path = "../rakit-vdom" }
+serde = { version = "1", features = ["derive"] }

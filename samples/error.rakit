@@ -1,0 +1,127 @@
+// ============================================
+// error.rakit — Error Boundary Demo
+// ============================================
+// Demonstrasi penggunaan error boundary (coba/tangkap)
+// untuk penanganan error di komponen.
+
+dari "rakit/ui" ambil { render, css };
+dari "rakit/cetak" ambil { cetak };
+
+// -- KOMPONEN BERBAHAYA --
+komponen KomponenBerbahaya(props: { penyebab: String }) {
+    // Komponen ini sengaja melempar error berdasarkan props
+    coba {
+        jika (props.penyebab == "error") {
+            lempar Error("Terjadi error yang disengaja!");
+        }
+
+        jika (props.penyebab == "null") {
+            konstan data = batal;
+            cetak(data.panjang); // Akan error: null reference
+        }
+
+        tampilkan {
+            <div className="berbahaya">
+                <h3>"Komponen Berbahaya"</h3>
+                <p>"Komponen ini berjalan normal."</p>
+                <p>"Penyebab: " + props.penyebab</p>
+            </div>
+        }
+    } tangkap (err) {
+        tampilkan {
+            <div className="error-fallback" data-rakit-error="true">
+                <h2>"Terjadi Kesalahan!"</h2>
+                <p>"Pesan: " + err.pesan</p>
+                <p>"Komponen: " + err.komponen</p>
+                {jika (err.stack) {
+                    <pre>{err.stack}</pre>
+                }}
+            </div>
+        }
+    }
+}
+
+// -- KOMPONEN AMAN --
+komponen KomponenAman() {
+    tampilkan {
+        <div className="aman">
+            <h3>"Komponen Aman"</h3>
+            <p>"Komponen ini selalu berjalan normal."</p>
+            <p>"Timestamp: " + sekarang()</p>
+        </div>
+    }
+}
+
+// -- ERROR BOUNDARY WRAPPER --
+komponen ErrorBoundary(props: { anak: ReactNode, nama: String }) {
+    keadaan(adaError, aturAdaError) = salah;
+    keadaan(errorInfo, aturErrorInfo) = batal;
+
+    efek(() => {
+        // Daftarkan boundary untuk fiber ini
+        cetak("Error boundary '" + props.nama + "' siap");
+        berhenti () => {
+            cetak("Error boundary '" + props.nama + "' dibongkar");
+        };
+    }, []);
+
+    // Fallback UI jika error
+    coba {
+        tampilkan {
+            <div className="boundary-wrapper">
+                <div className="boundary-header">
+                    <p>"Boundary: " + props.nama + " (status: aktif)"</p>
+                </div>
+                {props.anak}
+            </div>
+        }
+    } tangkap (err) {
+        tampilkan {
+            <div className="boundary-error" data-rakit-error="true">
+                <h2>"Boundary '" + props.nama + "' menangkap error"</h2>
+                <p>"Pesan: " + err.pesan</p>
+                <button onClick={() => aturAdaError(salah)}>
+                    "Coba Lagi"
+                </button>
+            </div>
+        }
+    }
+}
+
+// -- APLIKASI UTAMA --
+komponen App() {
+    keadaan(penyebab, aturPenyebab) = "normal";
+
+    tampilkan {
+        <div className="app">
+            <h1>"Demo Error Boundary"</h1>
+
+            <div className="kontrol">
+                <p>"Pilih penyebab error:"</p>
+                <button onClick={() => aturPenyebab("normal")}>"Normal"</button>
+                <button onClick={() => aturPenyebab("error")}>"Lempar Error"</button>
+                <button onClick={() => aturPenyebab("null")}>"Null Reference"</button>
+            </div>
+
+            <div className="container">
+                <ErrorBoundary nama="Boundary 1">
+                    <KomponenBerbahaya penyebab={penyebab} />
+                </ErrorBoundary>
+
+                <ErrorBoundary nama="Boundary 2">
+                    <KomponenAman />
+                </ErrorBoundary>
+            </div>
+
+            <div className="info">
+                <p>"Error boundary 1 akan menangkap error dari KomponenBerbahaya."</p>
+                <p>"Error boundary 2 tetap berjalan normal (tidak terpengaruh)."</p>
+            </div>
+        </div>
+    }
+}
+
+fungsi main() -> I32 {
+    render(<App />, document.getElementById("root"));
+    0
+}

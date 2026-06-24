@@ -1,0 +1,28 @@
+// Sample: Counter
+// Demonstrates state management, event handling, and rendering in Rakit
+
+impor "std/dom" { render, event }
+impor "std/hooks" { state }
+
+komponen Counter() {
+    ubah count = state(0)
+
+    fungsi increment() {
+        count = count + 1
+    }
+
+    fungsi decrement() {
+        count = count - 1
+    }
+
+    tampilkan <div kelas="counter">
+        <h1>Counter: {count}</h1>
+        <button onClick={increment}>+</button>
+        <button onClick={decrement}>-</button>
+        <p>Nilai saat ini: {count}</p>
+    </div>
+}
+
+fungsi utama() {
+    render(<Counter />, "app")
+}

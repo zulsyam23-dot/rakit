@@ -1,0 +1,31 @@
+[package]
+name = "rakit-backend-web"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rakit-ui = { path = "../rakit-ui" }
+rakit-runtime = { path = "../rakit-runtime" }
+rakit-vdom = { path = "../rakit-vdom" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+web-sys = { version = "0.3", features = [
+    "Document",
+    "Element",
+    "HtmlElement",
+    "Node",
+    "Event",
+    "EventTarget",
+    "MouseEvent",
+    "KeyboardEvent",
+    "InputEvent",
+    "Window",
+    "HtmlInputElement",
+    "HtmlButtonElement",
+    "HtmlDivElement",
+    "CssStyleDeclaration",
+    "CssRule",
+    "CssStyleSheet",
+] }
+js-sys = "0.3"

@@ -1,0 +1,10 @@
+[package]
+name = "rakit-ir-hir"
+version = "0.1.0"
+edition = "2021"
+description = "Rakit HIR — desugared AST, type-checked IR"
+
+[dependencies]
+rakit-core = { path = "../rakit-core" }
+rakit-ir-ast = { path = "../rakit-ir-ast" }
+serde = { version = "1", features = ["derive"] }

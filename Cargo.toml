@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "rakit-core",
+    "rakit-frontend",
+    "rakit-ir-ast",
+    "rakit-ir-hir",
+    "rakit-bridge",
+    "rakit-tool",
+    "rakit-runtime",
+    "rakit-vdom",
+    "rakit-ui",
+    "rakit-backend-win32",
+    "rakit-backend-gtk4",
+    "rakit-backend-web",
+    "rakit-fmt",
+    "rakit-test",
+    "rakit-lsp",
+    "rakit-opt",
+    "rakit-pm",
+    "rakit-polyglot",
+    "rakit-doc",
+]

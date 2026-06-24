@@ -1,0 +1,8 @@
+komponen Halaman(judul: Teks) {
+    konstan pesan = "Halo!"
+
+    tampilkan <div>
+        <h1>{judul}</h1>
+        <p>{pesan}</p>
+    </div>
+}

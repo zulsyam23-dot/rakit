@@ -1,0 +1,25 @@
+[package]
+name = "rakit-tool"
+version = "0.1.0"
+edition = "2021"
+description = "Rakit CLI tool — build, emit-ir, init"
+
+[[bin]]
+name = "rakit"
+path = "src/main.rs"
+
+[dependencies]
+rakit-core = { path = "../rakit-core" }
+rakit-frontend = { path = "../rakit-frontend" }
+rakit-ir-ast = { path = "../rakit-ir-ast" }
+rakit-ir-hir = { path = "../rakit-ir-hir" }
+rakit-bridge = { path = "../rakit-bridge" }
+rakit-fmt = { path = "../rakit-fmt" }
+rakit-test = { path = "../rakit-test" }
+rakit-opt = { path = "../rakit-opt" }
+rakit-pm = { path = "../rakit-pm" }
+rakit-doc = { path = "../rakit-doc" }
+rakit-polyglot = { path = "../rakit-polyglot" }
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

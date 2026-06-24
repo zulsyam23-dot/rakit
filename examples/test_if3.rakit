@@ -1,0 +1,8 @@
+fungsi utama() {
+    konstan x = 42
+    jika x > 10 {
+        cetak("x lebih besar dari y")
+    } lain {
+        cetak("x tidak lebih besar dari y")
+    }
+}
