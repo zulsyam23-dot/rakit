@@ -1,0 +1,7 @@
+fungsi main() {
+    konstan x = 42
+    ubah y = 10
+    jika x > y {
+        cetak("ok")
+    }
+}

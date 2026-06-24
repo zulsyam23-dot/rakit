@@ -111,29 +111,48 @@ impl<'a> Parser<'a> {
             }
             TokenKind::Ident => {
                 let name = self.advance_lexeme();
-                if self.eat(TokenKind::LBrace) {
-                    let mut fields = Vec::new();
-                    while !self.check(&[TokenKind::RBrace]) && !self.check(&[TokenKind::Eof]) {
-                        let spread = self.eat(TokenKind::DotDotDot);
-                        let fname = self.expect_ident()
-                            .map_err(|e| vec![e])?;
-                        let fvalue;
-                        if spread {
-                            fvalue = Expr::Ident(fname.clone());
-                        } else {
-                            self.expect(TokenKind::Colon)
-                                .map_err(|e| vec![e])?;
-                            fvalue = self.parse_expr()?;
+                if self.check(&[TokenKind::LBrace]) {
+                    // Lookahead: only treat as struct init if followed by
+                    // ident: or } or ... (struct-like), NOT a block (statement-like).
+                    self.ensure_loaded(2);
+                    let is_struct_init = match self.tokens.get(self.pos + 1).map(|t| t.kind) {
+                        Some(TokenKind::RBrace) => true,
+                        Some(TokenKind::DotDotDot) => true,
+                        Some(TokenKind::Ident) => {
+                            match self.tokens.get(self.pos + 2).map(|t| t.kind) {
+                                Some(TokenKind::Colon) => true,
+                                _ => false,
+                            }
                         }
-                        fields.push(StructInitField {
-                            name: fname,
-                            value: fvalue,
-                            spread,
-                        });
-                        self.eat(TokenKind::Comma);
+                        _ => false,
+                    };
+                    if is_struct_init {
+                        self.advance();
+                        let mut fields = Vec::new();
+                        while !self.check(&[TokenKind::RBrace]) && !self.check(&[TokenKind::Eof]) {
+                            let spread = self.eat(TokenKind::DotDotDot);
+                            let fname = self.expect_ident()
+                                .map_err(|e| vec![e])?;
+                            let fvalue;
+                            if spread {
+                                fvalue = Expr::Ident(fname.clone());
+                            } else {
+                                self.expect(TokenKind::Colon)
+                                    .map_err(|e| vec![e])?;
+                                fvalue = self.parse_expr()?;
+                            }
+                            fields.push(StructInitField {
+                                name: fname,
+                                value: fvalue,
+                                spread,
+                            });
+                            self.eat(TokenKind::Comma);
+                        }
+                        self.expect(TokenKind::RBrace).map_err(|e| vec![e])?;
+                        Ok(Expr::StructInit(name, fields))
+                    } else {
+                        Ok(Expr::Ident(name))
                     }
-                    self.expect(TokenKind::RBrace).map_err(|e| vec![e])?;
-                    Ok(Expr::StructInit(name, fields))
                 } else {
                     Ok(Expr::Ident(name))
                 }

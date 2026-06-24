@@ -421,6 +421,12 @@ impl<'a> Parser<'a> {
         &self.tokens[self.pos]
     }
 
+    fn ensure_loaded(&mut self, count: usize) {
+        while self.tokens.len() <= self.pos + count {
+            self.load_next();
+        }
+    }
+
     fn check(&self, kinds: &[TokenKind]) -> bool {
         kinds.contains(&self.peek().kind)
     }

@@ -56,7 +56,7 @@ impl TreeShaking {
         let mut entries = Vec::new();
         for item in &program.items {
             match item {
-                HirItem::Function(f) if f.name == "main" => {
+                HirItem::Function(f) if f.name == "main" || f.name == "utama" => {
                     entries.push(f.name.clone());
                 }
                 HirItem::Export(_) => {}
@@ -65,7 +65,7 @@ impl TreeShaking {
         }
         for item in &program.items {
             if let HirItem::Function(f) = item {
-                if f.name == "main" {
+                if f.name == "main" || f.name == "utama" {
                     entries.push(f.name.clone());
                 }
             }
@@ -149,7 +149,7 @@ impl OptimizationPass for TreeShaking {
             }
         }
 
-        for idx in removed.iter().rev() {
+        for idx in removed.iter() {
             program.items.remove(*idx);
         }
 
