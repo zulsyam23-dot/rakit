@@ -1,11 +1,11 @@
-# Rakit
+# Rakit v1.0.1
 
 Bahasa pemrograman modern dengan kompiler, LSP, package manager, dan polyglot FFI.
 
 ## 🚀 Instalasi
 
 ### Windows
-1. Download **rakit-v1.0.0-windows.zip** dari [GitHub Releases](https://github.com/zulsyam23-dot/rakit/releases)
+1. Download **rakit-v1.0.1-windows.zip** dari [GitHub Releases](https://github.com/zulsyam23-dot/rakit/releases)
 2. Extract, lalu jalankan `rakit.cmd` atau tambahkan `bin/` ke PATH
 
 ### Dari Source
