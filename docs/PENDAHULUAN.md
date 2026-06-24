@@ -12,6 +12,9 @@ Rakit menggabungkan konsep React (komponen, hooks, VDOM) dengan sintaksis yang f
 
 ## Instalasi
 
+### Download Cepat (Windows)
+Download **rakit-v1.0.0-windows.zip** dari halaman [GitHub Releases](https://github.com/zulsyam23-dot/rakit/releases), extract, lalu jalankan `rakit.cmd`.
+
 ### Prasyarat
 
 - Rust toolchain (rustup, cargo)
@@ -23,9 +26,9 @@ Rakit menggabungkan konsep React (komponen, hooks, VDOM) dengan sintaksis yang f
 
 ```bash
 git clone https://github.com/zulsyam23-dot/rakit
-cd rakit/rakit
+cd rakit
 cargo build --release
-cp target/release/rakit.exe /usr/local/bin/
+./rakit.cmd
 ```
 
 ### Verifikasi
