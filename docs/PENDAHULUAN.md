@@ -22,7 +22,7 @@ Rakit menggabungkan konsep React (komponen, hooks, VDOM) dengan sintaksis yang f
 ### Build dari Source
 
 ```bash
-git clone https://github.com/rakit/rakit
+git clone https://github.com/zulsyam23-dot/rakit
 cd rakit/rakit
 cargo build --release
 cp target/release/rakit.exe /usr/local/bin/
