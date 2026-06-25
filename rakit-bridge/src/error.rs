@@ -18,3 +18,5 @@ impl fmt::Display for BridgeError {
         }
     }
 }
+
+impl std::error::Error for BridgeError {}

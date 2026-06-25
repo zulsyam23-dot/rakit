@@ -203,7 +203,7 @@ pub struct HirBinary {
 pub enum HirBinaryOp {
     Add, Sub, Mul, Div, Mod,
     And, Or, Eq, Ne, Lt, Gt, Le, Ge,
-    Concat,
+    Concat, NullCoalescing,
 }
 
 #[derive(Debug, Clone)]

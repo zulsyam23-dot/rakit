@@ -95,3 +95,23 @@ pub enum TokenKind {
     Error,        // token tak dikenal
     Eof,          // akhir file
 }
+
+impl TokenKind {
+    pub fn is_ident_like(&self) -> bool {
+        matches!(self,
+            TokenKind::Ident
+            | TokenKind::Fn | TokenKind::Component
+            | TokenKind::Let | TokenKind::Mut | TokenKind::MutKw
+            | TokenKind::Type | TokenKind::Struct | TokenKind::Enum
+            | TokenKind::If | TokenKind::Else | TokenKind::While
+            | TokenKind::For | TokenKind::In
+            | TokenKind::Match | TokenKind::Return | TokenKind::Break
+            | TokenKind::Continue | TokenKind::True | TokenKind::False
+            | TokenKind::Null | TokenKind::Import | TokenKind::From
+            | TokenKind::Export | TokenKind::Try | TokenKind::Catch
+            | TokenKind::Throw | TokenKind::Render | TokenKind::State
+            | TokenKind::Effect | TokenKind::Ref | TokenKind::Context
+            | TokenKind::As | TokenKind::Wildcard
+        )
+    }
+}

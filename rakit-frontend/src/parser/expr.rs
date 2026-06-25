@@ -10,6 +10,7 @@ type Result<T> = std::result::Result<T, Vec<Diagnostic>>;
 enum Precedence {
     Min = 0,
     Assign,
+    NullCoalescing,
     Ternary,
     Or,
     And,
@@ -46,19 +47,24 @@ impl<'a> Parser<'a> {
     fn parse_expr_prec(&mut self, min_prec: Precedence) -> Result<Expr> {
         let mut left = self.parse_prefix()?;
 
-        // Binary operators with precedence
-        while let Some(prec) = get_precedence(self.peek().kind) {
-            if prec < min_prec {
-                break;
-            }
-            match self.parse_infix(left, prec) {
-                Ok(new_left) => left = new_left,
-                Err(e) => return Err(vec![e]),
-            }
-        }
-
-        // Postfix operations: calls, member access, indexing (always tight)
         loop {
+            // Generic type arguments in function calls: fn<Type>(args) - must be before < binary op
+            if self.peek().kind == TokenKind::Lt && self.skippable_generic() {
+                self.skip_generic_params();
+                continue;
+            }
+
+            // Binary operators with precedence
+            if let Some(prec) = get_precedence(self.peek().kind) {
+                if prec >= min_prec {
+                    match self.parse_infix(left, prec) {
+                        Ok(new_left) => { left = new_left; continue; }
+                        Err(e) => return Err(vec![e]),
+                    }
+                }
+            }
+
+            // Postfix operations: calls, member access, indexing (always tight)
             match self.peek().kind {
                 TokenKind::LParen => {
                     self.advance();
@@ -69,33 +75,42 @@ impl<'a> Parser<'a> {
                     }
                     self.expect(TokenKind::RParen).map_err(|e| vec![e])?;
                     left = Expr::Call(Box::new(left), args);
+                    continue;
                 }
                 TokenKind::Dot => {
                     self.advance();
-                    let name = self.expect_ident().map_err(|e| vec![e])?;
+                    let name = self.expect_ident_name().map_err(|e| vec![e])?;
                     left = Expr::Member(Box::new(left), name);
+                    continue;
+                }
+                TokenKind::Question if self.peek().lexeme == "?." => {
+                    self.advance();
+                    let name = self.expect_ident_name().map_err(|e| vec![e])?;
+                    left = Expr::Member(Box::new(left), name);
+                    continue;
                 }
                 TokenKind::LBracket => {
                     self.advance();
                     let index = self.parse_expr()?;
                     self.expect(TokenKind::RBracket).map_err(|e| vec![e])?;
                     left = Expr::Index(Box::new(left), Box::new(index));
+                    continue;
                 }
                 _ => break,
             }
         }
 
         if self.eat(TokenKind::Question) {
-            let then_expr = self.parse_expr()?;
-            match self.peek().kind {
-                TokenKind::Colon => {
-                    self.advance();
+            if self.check(&[TokenKind::Question]) {
+                // ?? nullish coalescing (lowest precedence)
+                self.advance();
+                let right = self.parse_expr_prec(Precedence::Min)?;
+                left = Expr::Binary(BinaryOp::NullCoalescing, Box::new(left), Box::new(right));
+            } else {
+                let then_expr = self.parse_expr()?;
+                if self.eat(TokenKind::Colon) {
                     let else_expr = self.parse_expr()?;
                     left = Expr::Ternary(Box::new(left), Box::new(then_expr), Box::new(else_expr));
-                }
-                _ => {
-                    // ? without colon = optional chaining or error
-                    // For now, just return left
                 }
             }
         }
@@ -109,13 +124,26 @@ impl<'a> Parser<'a> {
                 | TokenKind::True | TokenKind::False | TokenKind::Null => {
                 Ok(self.parse_literal())
             }
-            TokenKind::Ident => {
+            TokenKind::If => {
+                // jika (cond) then_expr lain else_expr  — if as expression
+                self.advance();
+                self.expect(TokenKind::LParen).map_err(|e| vec![e])?;
+                let cond = self.parse_expr()?;
+                self.expect(TokenKind::RParen).map_err(|e| vec![e])?;
+                let then_expr = self.parse_expr()?;
+                let else_expr = if self.peek().kind == TokenKind::Else {
+                    self.advance();
+                    self.parse_expr()?
+                } else {
+                    Expr::Literal(Literal::Null)
+                };
+                Ok(Expr::Ternary(Box::new(cond), Box::new(then_expr), Box::new(else_expr)))
+            }
+            _ if self.peek().is_keyword() => {
                 let name = self.advance_lexeme();
                 if self.check(&[TokenKind::LBrace]) {
-                    // Lookahead: only treat as struct init if followed by
-                    // ident: or } or ... (struct-like), NOT a block (statement-like).
                     self.ensure_loaded(2);
-                    let is_struct_init = match self.tokens.get(self.pos + 1).map(|t| t.kind) {
+                    let is_object = match self.tokens.get(self.pos + 1).map(|t| t.kind) {
                         Some(TokenKind::RBrace) => true,
                         Some(TokenKind::DotDotDot) => true,
                         Some(TokenKind::Ident) => {
@@ -126,56 +154,104 @@ impl<'a> Parser<'a> {
                         }
                         _ => false,
                     };
-                    if is_struct_init {
+                    if is_object {
                         self.advance();
-                        let mut fields = Vec::new();
-                        while !self.check(&[TokenKind::RBrace]) && !self.check(&[TokenKind::Eof]) {
-                            let spread = self.eat(TokenKind::DotDotDot);
-                            let fname = self.expect_ident()
-                                .map_err(|e| vec![e])?;
-                            let fvalue;
-                            if spread {
-                                fvalue = Expr::Ident(fname.clone());
-                            } else {
-                                self.expect(TokenKind::Colon)
-                                    .map_err(|e| vec![e])?;
-                                fvalue = self.parse_expr()?;
-                            }
-                            fields.push(StructInitField {
-                                name: fname,
-                                value: fvalue,
-                                spread,
-                            });
-                            self.eat(TokenKind::Comma);
-                        }
-                        self.expect(TokenKind::RBrace).map_err(|e| vec![e])?;
-                        Ok(Expr::StructInit(name, fields))
-                    } else {
-                        Ok(Expr::Ident(name))
+                        let fields = self.parse_object_fields()?;
+                        return Ok(Expr::StructInit(name, fields));
                     }
-                } else {
-                    Ok(Expr::Ident(name))
                 }
+                Ok(Expr::Ident(name))
+            }
+            TokenKind::Ident => {
+                let name = self.advance_lexeme();
+                if self.check(&[TokenKind::LBrace]) {
+                    self.ensure_loaded(2);
+                    let is_object = match self.tokens.get(self.pos + 1).map(|t| t.kind) {
+                        Some(TokenKind::RBrace) => true,
+                        Some(TokenKind::DotDotDot) => true,
+                        Some(TokenKind::Ident) => {
+                            match self.tokens.get(self.pos + 2).map(|t| t.kind) {
+                                Some(TokenKind::Colon) => true,
+                                _ => false,
+                            }
+                        }
+                        _ => false,
+                    };
+                    if is_object {
+                        self.advance();
+                        let fields = self.parse_object_fields()?;
+                        return Ok(Expr::StructInit(name, fields));
+                    }
+                }
+                Ok(Expr::Ident(name))
             }
             TokenKind::LParen => {
                 self.advance();
+                // Check for arrow function: () => or (param) => or (param, param) =>
+                if self.check(&[TokenKind::RParen]) {
+                    self.advance();
+                    if self.check(&[TokenKind::FatArrow]) {
+                        return self.parse_arrow_fn_body(Vec::new());
+                    }
+                    return Ok(Expr::Literal(Literal::Null));
+                }
+                // Try to parse as arrow function params
+                let saved_pos = self.pos;
+                let params = self.try_parse_arrow_params();
+                if let Some(params) = params {
+                    return self.parse_arrow_fn_body(params);
+                }
+                self.pos = saved_pos;
+                // Regular parenthesized expression
                 let expr = self.parse_expr()?;
                 self.expect(TokenKind::RParen).map_err(|e| vec![e])?;
                 Ok(expr)
             }
             TokenKind::LBrace => {
-                let block = self.parse_block().map_err(|e| vec![e])?;
-                Ok(Expr::BlockExpr(block))
+                // Try anonymous object literal first, fall back to block
+                self.ensure_loaded(2);
+                let is_object = match self.tokens.get(self.pos + 1).map(|t| t.kind) {
+                    Some(TokenKind::RBrace) => true,
+                    Some(TokenKind::DotDotDot) => true,
+                    Some(TokenKind::Ident) => {
+                        match self.tokens.get(self.pos + 2).map(|t| t.kind) {
+                            Some(TokenKind::Colon) => true,
+                            Some(TokenKind::Comma) => true,
+                            Some(TokenKind::RBrace) => true,
+                            _ => false,
+                        }
+                    }
+                    Some(TokenKind::String) => true,
+                    _ => false,
+                };
+                if is_object {
+                    self.advance();
+                    let fields = self.parse_object_fields()?;
+                    Ok(Expr::Object(fields))
+                } else {
+                    let block = self.parse_block().map_err(|e| vec![e])?;
+                    Ok(Expr::BlockExpr(block))
+                }
             }
             TokenKind::LBracket => {
                 self.advance();
                 let mut items = Vec::new();
                 while !self.check(&[TokenKind::RBracket]) && !self.check(&[TokenKind::Eof]) {
-                    items.push(self.parse_expr()?);
+                    if self.eat(TokenKind::DotDotDot) {
+                        let expr = self.parse_expr()?;
+                        items.push(Expr::Spread(Box::new(expr)));
+                    } else {
+                        items.push(self.parse_expr()?);
+                    }
                     self.eat(TokenKind::Comma);
                 }
                 self.expect(TokenKind::RBracket).map_err(|e| vec![e])?;
                 Ok(Expr::Array(items))
+            }
+            TokenKind::DotDotDot => {
+                self.advance();
+                let expr = self.parse_expr()?;
+                Ok(Expr::Spread(Box::new(expr)))
             }
             TokenKind::Minus => {
                 self.advance();
@@ -192,6 +268,82 @@ impl<'a> Parser<'a> {
             }
             _ => Err(vec![self.error_expected("ekspresi")]),
         }
+    }
+
+    fn parse_object_fields(&mut self) -> std::result::Result<Vec<StructInitField>, Vec<Diagnostic>> {
+        let mut fields = Vec::new();
+        while !self.check(&[TokenKind::RBrace]) && !self.check(&[TokenKind::Eof]) {
+            let spread = self.eat(TokenKind::DotDotDot);
+            let fname = self.expect_ident().map_err(|e| vec![e])?;
+            let fvalue;
+            if spread {
+                fvalue = Expr::Ident(fname.clone());
+            } else if self.check(&[TokenKind::Colon]) {
+                self.advance();
+                fvalue = self.parse_expr()?;
+            } else {
+                // Field shorthand: { field } → { field: field }
+                fvalue = Expr::Ident(fname.clone());
+            }
+            fields.push(StructInitField { name: fname, value: fvalue, spread });
+            if !self.eat(TokenKind::Comma) { break; }
+        }
+        self.expect(TokenKind::RBrace).map_err(|e| vec![e])?;
+        Ok(fields)
+    }
+
+    fn try_parse_arrow_params(&mut self) -> Option<Vec<FnParam>> {
+        // Look for pattern: ident or ident: Type, ...
+        // After LParen is already consumed
+        let saved = self.pos;
+        let mut params = Vec::new();
+        if self.check(&[TokenKind::RParen]) {
+            return Some(Vec::new());
+        }
+        loop {
+            match self.peek().kind {
+                TokenKind::Ident | TokenKind::Underscore => {
+                    let name = self.advance_lexeme();
+                    let ty = if self.eat(TokenKind::Colon) {
+                        // Parse type - but we need to save/restore position if this fails
+                        self.parse_type().ok().unwrap_or(Type::Infer)
+                    } else {
+                        Type::Infer
+                    };
+                    params.push(FnParam {
+                        name,
+                        ty,
+                        span: self.prev_span(),
+                    });
+                }
+                _ => {
+                    self.pos = saved;
+                    return None;
+                }
+            }
+            if self.eat(TokenKind::Comma) {
+                continue;
+            }
+            break;
+        }
+        if self.check(&[TokenKind::RParen]) {
+            self.advance(); // consume )
+            if self.check(&[TokenKind::FatArrow]) {
+                return Some(params);
+            }
+        }
+        self.pos = saved;
+        None
+    }
+
+    fn parse_arrow_fn_body(&mut self, params: Vec<FnParam>) -> Result<Expr> {
+        self.advance(); // consume =>
+        let body = self.parse_expr()?;
+        Ok(Expr::ArrowFn(ArrowFn {
+            params,
+            body: Box::new(body),
+            span: self.prev_span(),
+        }))
     }
 
     fn parse_infix(&mut self, left: Expr, _min_prec: Precedence) -> std::result::Result<Expr, Diagnostic> {
@@ -283,12 +435,16 @@ impl<'a> Parser<'a> {
             return Err(vec![self.error_expected("tag JSX")]);
         }
 
-        let tag = self.expect_ident().map_err(|e| vec![e])?;
+        let mut tag_parts = vec![self.expect_ident_name().map_err(|e| vec![e])?];
+        while self.eat(TokenKind::Dot) {
+            tag_parts.push(self.expect_ident_name().map_err(|e| vec![e])?);
+        }
+        let tag = tag_parts.join(".");
         let mut attrs = Vec::new();
 
         loop {
             match self.peek().kind {
-                TokenKind::Ident => {
+                kind if kind.is_ident_like() => {
                     let attr_name = self.advance_lexeme();
                     if self.eat(TokenKind::Assign) {
                         if self.eat(TokenKind::LBrace) {
@@ -343,7 +499,9 @@ impl<'a> Parser<'a> {
                     self.advance();
                     break;
                 }
-                _ => return Err(vec![self.error_expected("atribut atau > JSX")]),
+                _ => {
+                    return Err(vec![self.error_expected("atribut atau > JSX")])
+                },
             }
         }
 
@@ -354,7 +512,11 @@ impl<'a> Parser<'a> {
                     let saved_pos = self.pos;
                     self.advance();
                     if self.eat(TokenKind::Slash) {
-                        let close_tag = self.expect_ident().map_err(|e| vec![e])?;
+                        let mut close_parts = vec![self.expect_ident_name().map_err(|e| vec![e])?];
+                        while self.eat(TokenKind::Dot) {
+                            close_parts.push(self.expect_ident_name().map_err(|e| vec![e])?);
+                        }
+                        let close_tag = close_parts.join(".");
                         self.expect(TokenKind::Gt).map_err(|e| vec![e])?;
                         if close_tag != tag {
                             return Err(vec![self.error_expected(&format!("</{}>", tag))]);

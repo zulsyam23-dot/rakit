@@ -31,7 +31,7 @@ enum Commands {
         #[arg(long)]
         output: Option<PathBuf>,
         /// Level optimasi: 0, 1, 2
-        #[arg(long, default_value = "1")]
+        #[arg(long, default_value = "0")]
         optimize: u8,
     },
 
@@ -213,19 +213,8 @@ fn run_test(file: Option<&PathBuf>, update: bool) -> Result<(), String> {
     }
 }
 
-fn run_dev(file: &PathBuf, _port: Option<u16>) -> Result<(), String> {
-    println!("Rakit Dev Mode — Hot Reload");
-    println!("Entry: {}", file.display());
-    println!("Watching for changes... (Ctrl+C to stop)");
-
-    let _source = std::fs::read_to_string(file)
-        .map_err(|e| format!("Gagal membaca {}: {}", file.display(), e))?;
-
-    println!("Dev server running. Press Ctrl+C to stop.");
-
-    loop {
-        std::thread::sleep(std::time::Duration::from_secs(1));
-    }
+fn run_dev(file: &PathBuf, port: Option<u16>) -> Result<(), String> {
+    commands::dev::run_dev_server(file, port)
 }
 
 fn run_package(cmd: &PackageCommand) -> Result<(), String> {

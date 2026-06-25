@@ -10,16 +10,17 @@ impl RakitToBrakBridge {
         RakitToBrakBridge
     }
 
-    /// Convert Rakit HIR program to Brak IR AST.
     pub fn convert_program(&self, rakit: &HirProgram) -> Result<BrakProgram, BridgeError> {
         let mut items = Vec::new();
         for item in &rakit.items {
-            items.push(self.convert_item(item)?);
+            if let Some(brak_item) = self.convert_item(item)? {
+                items.push(brak_item);
+            }
         }
         Ok(BrakProgram { items })
     }
 
-    fn convert_item(&self, item: &HirItem) -> Result<BrakItem, BridgeError> {
+    fn convert_item(&self, item: &HirItem) -> std::result::Result<Option<BrakItem>, BridgeError> {
         match item {
             HirItem::Function(f) => {
                 let mut params = Vec::new();
@@ -29,16 +30,21 @@ impl RakitToBrakBridge {
                         ty: convert_type(&p.ty),
                     });
                 }
-                Ok(BrakItem::Function(BrakFnDef {
+                Ok(Some(BrakItem::Function(BrakFnDef {
                     name: f.name.clone(),
                     params,
                     return_ty: Some(convert_type(&f.return_ty)),
                     body: self.convert_block(&f.body)?,
-                }))
+                    is_component: false,
+                    hook_calls: vec![],
+                })))
             }
             HirItem::Component(c) => {
+                let hook_calls: Vec<BrakHookCall> = c.hook_calls.iter()
+                    .map(|hc| self.convert_hook_call(hc))
+                    .collect::<Result<Vec<_>, _>>()?;
                 let body = self.convert_component_body(c)?;
-                Ok(BrakItem::Function(BrakFnDef {
+                Ok(Some(BrakItem::Function(BrakFnDef {
                     name: c.name.clone(),
                     params: vec![BrakParam {
                         name: c.props_param.name.clone(),
@@ -46,32 +52,63 @@ impl RakitToBrakBridge {
                     }],
                     return_ty: Some(BrakTy::Named("Node".into())),
                     body,
-                }))
+                    is_component: true,
+                    hook_calls,
+                })))
             }
             HirItem::Struct(s) => {
                 let fields = s.fields.iter().map(|f| BrakStructField {
                     name: f.name.clone(),
                     ty: convert_type(&f.ty),
                 }).collect();
-                Ok(BrakItem::Struct(BrakStructDef {
+                Ok(Some(BrakItem::Struct(BrakStructDef {
                     name: s.name.clone(),
                     fields,
-                }))
+                })))
             }
             HirItem::Enum(e) => {
                 let variants = e.variants.iter().map(|v| BrakEnumVariant {
                     name: v.name.clone(),
                     fields: v.fields.iter().map(convert_type).collect(),
                 }).collect();
-                Ok(BrakItem::Enum(BrakEnumDef {
+                Ok(Some(BrakItem::Enum(BrakEnumDef {
                     name: e.name.clone(),
                     variants,
-                }))
+                })))
             }
-            HirItem::TypeAlias(_) | HirItem::Import(_) | HirItem::Export(_) => {
-                Err(BridgeError::UnsupportedFeature(
-                    "TypeAlias, Import, Export not yet supported in Brak bridge".into()
-                ))
+            HirItem::TypeAlias(_) | HirItem::Export(_) | HirItem::Import(_) => {
+                Ok(None)
+            }
+        }
+    }
+
+    fn convert_hook_call(&self, hook: &HirHookCall) -> Result<BrakHookCall, BridgeError> {
+        match &hook.kind {
+            HookKind::State { state_var, setter_var, initial, .. } => {
+                Ok(BrakHookCall {
+                    kind: BrakHookKind::State {
+                        state_var: state_var.clone(),
+                        setter_var: setter_var.clone(),
+                        initial: Box::new(self.convert_expr(initial)?),
+                    },
+                })
+            }
+            HookKind::Effect { callback, deps } => {
+                Ok(BrakHookCall {
+                    kind: BrakHookKind::Effect {
+                        callback: Box::new(self.convert_expr(callback)?),
+                        deps: deps.iter().map(|d| self.convert_expr(d)).collect::<Result<Vec<_>, _>>()?,
+                    },
+                })
+            }
+            HookKind::Memo { result_var, callback, deps, .. } => {
+                Ok(BrakHookCall {
+                    kind: BrakHookKind::Memo {
+                        result_var: result_var.clone(),
+                        callback: Box::new(self.convert_expr(callback)?),
+                        deps: deps.iter().map(|d| self.convert_expr(d)).collect::<Result<Vec<_>, _>>()?,
+                    },
+                })
             }
         }
     }
@@ -102,16 +139,45 @@ impl RakitToBrakBridge {
                 condition: self.convert_expr(&w.condition)?,
                 body: self.convert_block(&w.body)?,
             })),
+            HirStmt::Match(m) => {
+                let arms: Vec<BrakMatchArm> = m.arms.iter()
+                    .map(|arm| {
+                        Ok(BrakMatchArm {
+                            pattern: self.convert_pattern(&arm.pattern),
+                            body: self.convert_expr(&arm.body)?,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(BrakStmt::Match(BrakMatch {
+                    expr: Box::new(self.convert_expr(&m.expr)?),
+                    arms,
+                }))
+            }
             HirStmt::Return(Some(e)) => Ok(BrakStmt::Return(Some(self.convert_expr(e)?))),
             HirStmt::Return(None) => Ok(BrakStmt::Return(None)),
             HirStmt::Block(b) => Ok(BrakStmt::Block(self.convert_block(b)?)),
-            HirStmt::Break | HirStmt::Continue | HirStmt::Match(_)
-            | HirStmt::Try(_) | HirStmt::Throw(_) => {
-                Err(BridgeError::UnsupportedFeature(
-                    format!("{:?} not yet supported in Brak bridge", 
-                        std::mem::discriminant(stmt))
-                ))
-            }
+            HirStmt::Try(t) => Ok(BrakStmt::Try(BrakTry {
+                try_block: self.convert_block(&t.try_block)?,
+                catch_var: t.catch_var.clone(),
+                catch_block: self.convert_block(&t.catch_block)?,
+            })),
+            HirStmt::Throw(e) => Ok(BrakStmt::Throw(self.convert_expr(e)?)),
+            HirStmt::Break => Ok(BrakStmt::Return(None)),
+            HirStmt::Continue => Ok(BrakStmt::Return(None)),
+        }
+    }
+
+    fn convert_pattern(&self, pattern: &HirPattern) -> BrakPattern {
+        match pattern {
+            HirPattern::Wildcard => BrakPattern::Wildcard,
+            HirPattern::Literal(lit) => BrakPattern::Literal(match lit {
+                HirLiteral::Number(n) => BrakLiteral::Number(*n),
+                HirLiteral::String(s) => BrakLiteral::String(s.clone()),
+                HirLiteral::Bool(b) => BrakLiteral::Bool(*b),
+                HirLiteral::Null => BrakLiteral::Null,
+            }),
+            HirPattern::Ident(name) => BrakPattern::Ident(name.clone()),
+            HirPattern::Struct { .. } | HirPattern::Enum { .. } => BrakPattern::Ident("_".into()),
         }
     }
 
@@ -158,29 +224,27 @@ impl RakitToBrakBridge {
             }
             HirExpr::StructInit(s) => {
                 let fields: Vec<(String, BrakExpr)> = s.fields.iter()
-                    .map(|f| self.convert_expr(&f.value).map(|e| (f.name.clone(), e)))
+                    .map(|f| {
+                        if f.spread {
+                            Ok(("".into(), BrakExpr::Spread(Box::new(self.convert_expr(&f.value)?))))
+                        } else {
+                            self.convert_expr(&f.value).map(|e| (f.name.clone(), e))
+                        }
+                    })
                     .collect::<Result<Vec<_>, _>>()?;
-                Ok(BrakExpr::StructInit(s.name.clone(), fields))
+                let has_spread = fields.iter().any(|(k, v)| k.is_empty() && matches!(v, BrakExpr::Spread(_)));
+                if s.name.is_empty() || has_spread {
+                    Ok(BrakExpr::Object(fields))
+                } else {
+                    Ok(BrakExpr::StructInit(s.name.clone(), fields))
+                }
             }
             HirExpr::Ternary(t) => {
-                // Ternary → if-else block
-                let cond = self.convert_expr(&t.condition)?;
-                let then_expr = self.convert_expr(&t.then_expr)?;
-                let else_expr = self.convert_expr(&t.else_expr)?;
-                let then_block = BrakBlock {
-                    stmts: vec![BrakStmt::Expr(then_expr)],
-                };
-                let else_block = BrakBlock {
-                    stmts: vec![BrakStmt::Expr(else_expr)],
-                };
-                let if_stmt = BrakStmt::If(BrakIf {
-                    condition: cond,
-                    then_block,
-                    else_block: Some(else_block),
-                });
-                Ok(BrakExpr::Block(BrakBlock {
-                    stmts: vec![if_stmt],
-                }))
+                Ok(BrakExpr::Ternary(
+                    Box::new(self.convert_expr(&t.condition)?),
+                    Box::new(self.convert_expr(&t.then_expr)?),
+                    Box::new(self.convert_expr(&t.else_expr)?),
+                ))
             }
             HirExpr::Assign(a) => {
                 let target = self.convert_expr(&a.target)?;
@@ -191,10 +255,14 @@ impl RakitToBrakBridge {
                 self.convert_jsx_element(elem)
             }
             HirExpr::Block(b) => Ok(BrakExpr::Block(self.convert_block(b)?)),
-            HirExpr::HookState(_) | HirExpr::HookEffect(_) | HirExpr::HookMemo(_) => {
-                Err(BridgeError::UnsupportedFeature(
-                    "Hooks not yet supported in Brak bridge, desugar first".into()
-                ))
+            HirExpr::HookState(hs) => {
+                Ok(BrakExpr::Ident(hs.state_var.clone()))
+            }
+            HirExpr::HookEffect(_) => {
+                Ok(BrakExpr::Null)
+            }
+            HirExpr::HookMemo(hm) => {
+                Ok(BrakExpr::Ident(hm.result_var.clone()))
             }
         }
     }
@@ -222,19 +290,6 @@ impl RakitToBrakBridge {
 
     fn convert_component_body(&self, c: &HirComponent) -> Result<BrakBlock, BridgeError> {
         let mut stmts = Vec::new();
-        for hc in &c.hook_calls {
-            match &hc.kind {
-                HookKind::State { state_var, setter_var: _, initial, .. } => {
-                    stmts.push(BrakStmt::Let(BrakLet {
-                        name: state_var.clone(),
-                        mutable: true,
-                        ty: None,
-                        value: self.convert_expr(initial)?,
-                    }));
-                }
-                _ => {}
-            }
-        }
         for s in &c.body_stmts {
             stmts.push(self.convert_stmt(s)?);
         }
@@ -253,6 +308,7 @@ impl RakitToBrakBridge {
             Lt => BrakBinaryOp::Lt, Gt => BrakBinaryOp::Gt,
             Le => BrakBinaryOp::Le, Ge => BrakBinaryOp::Ge,
             Concat => BrakBinaryOp::Concat,
+            NullCoalescing => BrakBinaryOp::NullCoalescing,
         }
     }
 }

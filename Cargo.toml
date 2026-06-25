@@ -20,4 +20,5 @@ members = [
     "rakit-pm",
     "rakit-polyglot",
     "rakit-doc",
+    "rakit-codegen",
 ]

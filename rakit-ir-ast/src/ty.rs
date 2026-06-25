@@ -9,6 +9,7 @@ pub enum Type {
     Array(Box<Type>),
     Fn(Vec<Type>, Box<Type>),
     Optional(Box<Type>),
+    Union(Vec<Type>),
     Infer,
 }
 

@@ -95,8 +95,17 @@ impl<B: UiBackend> RakitApp<B> {
             }
             VDomNode::Component(comp) => {
                 if let Some(factory) = registry.get(&comp.name) {
-                    let rendered = factory(&comp.props);
+                    let mut rendered = factory(&comp.props);
+                    if !comp.children.is_empty() {
+                        if let Some(children_mut) = rendered.children_mut() {
+                            *children_mut = comp.children.clone();
+                        }
+                    }
                     Self::render_to_native(backend, &rendered, parent, window, registry);
+                } else if !comp.children.is_empty() {
+                    for child in &comp.children {
+                        Self::render_to_native(backend, child, parent, window, registry);
+                    }
                 }
             }
             VDomNode::Empty => {}
@@ -111,9 +120,9 @@ impl<B: UiBackend> RakitApp<B> {
             let result = diff(Some(old), &new_vdom);
 
             if !result.patches.is_empty() {
-                if let Some(window) = self.windows.first() {
-                    let root_handle = self.backend.root_element(window);
-                    self.apply_patches(&result.patches, &root_handle, window);
+                if let Some(window) = self.windows.first().cloned() {
+                    let root_handle = self.backend.root_element(&window);
+                    self.apply_patches(&result.patches, &root_handle, &window);
                 }
             }
         }
@@ -122,57 +131,131 @@ impl<B: UiBackend> RakitApp<B> {
     }
 
     fn apply_patches(
-        &self,
+        &mut self,
         patches: &[rakit_vdom::diff::Patch],
-        _root: &B::ElementHandle,
-        _window: &B::WindowHandle,
+        root: &B::ElementHandle,
+        window: &B::WindowHandle,
     ) {
         for patch in patches {
             match patch {
                 rakit_vdom::diff::Patch::SetAttr {
-                    path: _path,
+                    path,
                     name,
                     value,
                 } => {
-                    // TODO: resolve path to element handle and apply
-                    let _ = (name, value);
+                    if let Some(handle) = self.backend.resolve_path(path, root) {
+                        self.backend.set_attribute(&handle, name, value);
+                    }
                 }
-                rakit_vdom::diff::Patch::SetText { path: _path, text } => {
-                    let _ = text;
+                rakit_vdom::diff::Patch::SetText { path, text } => {
+                    if let Some(handle) = self.backend.resolve_path(path, root) {
+                        self.backend.set_text(&handle, text);
+                    }
                 }
                 rakit_vdom::diff::Patch::AttachEvent {
-                    path: _path,
+                    path,
                     event_type,
                     handler_id,
                 } => {
-                    let _ = (event_type, handler_id);
+                    if let Some(handle) = self.backend.resolve_path(path, root) {
+                        self.backend.attach_event(&handle, event_type.clone(), *handler_id);
+                    }
                 }
-                rakit_vdom::diff::Patch::DetachEvent {
-                    path: _path,
-                    handler_id,
-                } => {
-                    let _ = handler_id;
+                rakit_vdom::diff::Patch::DetachEvent { path, handler_id } => {
+                    if let Some(handle) = self.backend.resolve_path(path, root) {
+                        self.backend.detach_event(&handle, *handler_id);
+                    }
                 }
-                rakit_vdom::diff::Patch::Remove { path: _path } => {}
+                rakit_vdom::diff::Patch::Remove { path } => {
+                    if let Some(handle) = self.backend.resolve_path(path, root) {
+                        if path.len() >= 1 {
+                            let parent_path = path[..path.len() - 1].to_vec();
+                            if let Some(parent) = self.backend.resolve_path(&parent_path, root) {
+                                self.backend.remove_child(&parent, &handle);
+                            }
+                        }
+                    }
+                }
                 rakit_vdom::diff::Patch::Insert {
-                    parent_path: _parent_path,
-                    index: _index,
-                    node: _node,
-                } => {}
-                rakit_vdom::diff::Patch::Replace {
-                    old_path: _old_path,
-                    new_node: _new_node,
-                } => {}
+                    parent_path,
+                    index,
+                    node,
+                } => {
+                    if let Some(parent) = self.backend.resolve_path(parent_path, root) {
+                        let child = self.render_node_wasm(node, window);
+                        self.backend.insert_child(&parent, &child, *index);
+                    }
+                }
+                rakit_vdom::diff::Patch::Replace { old_path, new_node } => {
+                    if let Some(old_handle) = self.backend.resolve_path(old_path, root) {
+                        if let Some(parent_node) = old_path
+                            .len()
+                            .checked_sub(1)
+                            .and_then(|i| self.backend.resolve_path(&old_path[..i].to_vec(), root))
+                        {
+                            self.backend.remove_child(&parent_node, &old_handle);
+                            let new_child = self.render_node_wasm(new_node, window);
+                            self.backend.append_child(&parent_node, &new_child);
+                        }
+                    }
+                }
                 rakit_vdom::diff::Patch::Move {
-                    from_path: _from_path,
-                    to_parent: _to_parent,
-                    to_index: _to_index,
-                } => {}
-                rakit_vdom::diff::Patch::RemoveAttr {
-                    path: _path,
-                    name: _name,
-                } => {}
+                    from_path,
+                    to_parent,
+                    to_index,
+                } => {
+                    if let Some(handle) = self.backend.resolve_path(from_path, root) {
+                        if let Some(from_parent) = from_path
+                            .len()
+                            .checked_sub(1)
+                            .and_then(|i| self.backend.resolve_path(&from_path[..i].to_vec(), root))
+                        {
+                            self.backend.remove_child(&from_parent, &handle);
+                            if let Some(dest) = self.backend.resolve_path(to_parent, root) {
+                                self.backend.insert_child(&dest, &handle, *to_index);
+                            }
+                        }
+                    }
+                }
+                rakit_vdom::diff::Patch::RemoveAttr { path, name } => {
+                    if let Some(handle) = self.backend.resolve_path(path, root) {
+                        self.backend.remove_attribute(&handle, name);
+                    }
+                }
             }
+        }
+    }
+
+    fn render_node_wasm(&mut self, node: &VDomNode, window: &B::WindowHandle) -> B::ElementHandle {
+        match node {
+            VDomNode::Element(elem) => {
+                let handle = self.backend.create_element(window, &elem.tag);
+                for (name, value) in &elem.attrs {
+                    self.backend.set_attribute(&handle, name, value);
+                }
+                for child in &elem.children {
+                    let child_handle = self.render_node_wasm(child, window);
+                    self.backend.append_child(&handle, &child_handle);
+                }
+                handle
+            }
+            VDomNode::Text(text) => self.backend.create_text(window, &text.value),
+            VDomNode::Fragment(frag) => {
+                let first_child = frag.children.first().map(|c| self.render_node_wasm(c, window));
+                for child in &frag.children[1..] {
+                    let _ = self.render_node_wasm(child, window);
+                }
+                first_child.unwrap_or_else(|| self.backend.create_text(window, ""))
+            }
+            VDomNode::Component(comp) => {
+                if let Some(factory) = self.component_registry.get(&comp.name) {
+                    let rendered = factory(&comp.props);
+                    self.render_node_wasm(&rendered, window)
+                } else {
+                    self.backend.create_text(window, "")
+                }
+            }
+            VDomNode::Empty => self.backend.create_text(window, ""),
         }
     }
 

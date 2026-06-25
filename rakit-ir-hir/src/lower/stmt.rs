@@ -4,10 +4,42 @@ use crate::ty::*;
 use super::{HirLower, lower_type};
 
 impl HirLower {
+    /// Lower a statement, returning multiple HirStmts for destructuring `let`.
+    pub fn lower_stmts(&mut self, stmt: &ast::Stmt) -> Vec<HirStmt> {
+        match stmt {
+            ast::Stmt::Let(let_def) => {
+                if let Some(pattern) = &let_def.pattern {
+                    let mut out = Vec::new();
+                    self.expand_destructuring(
+                        pattern, &let_def.value, let_def.mutable, &let_def.ty, &mut out,
+                    );
+                    return out;
+                }
+                let value = self.lower_expr(&let_def.value);
+                vec![HirStmt::Let(HirLet {
+                    name: let_def.name.clone(),
+                    mutable: let_def.mutable,
+                    ty: let_def.ty.as_ref().map(|t| lower_type(t)).unwrap_or(TypeInfo::Infer),
+                    value,
+                    span: let_def.span,
+                })]
+            }
+            _ => {
+                self.lower_stmt(stmt)
+                    .map(|s| vec![s])
+                    .unwrap_or_default()
+            }
+        }
+    }
+
     pub fn lower_stmt(&mut self, stmt: &ast::Stmt) -> Option<HirStmt> {
         let result = match stmt {
             ast::Stmt::Let(let_def) => {
                 let value = self.lower_expr(&let_def.value);
+                if let Some(_) = &let_def.pattern {
+                    // Handled by lower_stmts — return None here
+                    return None;
+                }
                 Some(HirStmt::Let(HirLet {
                     name: let_def.name.clone(),
                     mutable: let_def.mutable,
@@ -62,6 +94,28 @@ impl HirLower {
             ast::Stmt::Throw(expr, _) => {
                 Some(HirStmt::Throw(self.lower_expr(expr)))
             }
+            ast::Stmt::HookState(hs) => {
+                Some(HirStmt::Let(HirLet {
+                    name: hs.state_var.clone(),
+                    mutable: true,
+                    ty: hs.ty.as_ref().map(|t| lower_type(t)).unwrap_or(TypeInfo::Infer),
+                    value: self.lower_expr(&hs.value),
+                    span: hs.span,
+                }))
+            }
+            ast::Stmt::FnDef(f) => {
+                let fn_ty = TypeInfo::Fn(FnType::new(
+                    f.params.iter().map(|p| lower_type(&p.ty)).collect(),
+                    f.return_ty.as_ref().map(|t| lower_type(t)).unwrap_or(TypeInfo::Void),
+                ));
+                Some(HirStmt::Let(HirLet {
+                    name: f.name.clone(),
+                    mutable: false,
+                    ty: fn_ty.clone(),
+                    value: HirExpr::Null(fn_ty),
+                    span: f.span,
+                }))
+            }
         };
         result
     }
@@ -73,15 +127,34 @@ impl HirLower {
         body_stmts: &mut Vec<HirStmt>,
     ) {
         match stmt {
+            ast::Stmt::HookState(hs) => {
+                let initial = self.lower_expr(&hs.value);
+                let state_var = hs.state_var.clone();
+                let setter_var = hs.setter_var.clone();
+                let ty = hs.ty.as_ref().map(|t| lower_type(t)).unwrap_or(TypeInfo::Infer);
+                hook_calls.push(HirHookCall {
+                    kind: HookKind::State {
+                        state_var,
+                        setter_var,
+                        initial: Box::new(initial),
+                        ty,
+                    },
+                    span: hs.span,
+                });
+            }
             ast::Stmt::Let(let_def) => {
-                let value = self.lower_expr(&let_def.value);
-                body_stmts.push(HirStmt::Let(HirLet {
-                    name: let_def.name.clone(),
-                    mutable: let_def.mutable,
-                    ty: let_def.ty.as_ref().map(|t| lower_type(t)).unwrap_or(TypeInfo::Infer),
-                    value,
-                    span: let_def.span,
-                }));
+                if let Some(pattern) = &let_def.pattern {
+                    self.expand_destructuring(pattern, &let_def.value, let_def.mutable, &let_def.ty, body_stmts);
+                } else {
+                    let value = self.lower_expr(&let_def.value);
+                    body_stmts.push(HirStmt::Let(HirLet {
+                        name: let_def.name.clone(),
+                        mutable: let_def.mutable,
+                        ty: let_def.ty.as_ref().map(|t| lower_type(t)).unwrap_or(TypeInfo::Infer),
+                        value,
+                        span: let_def.span,
+                    }));
+                }
             }
             ast::Stmt::Expr(expr, _) => {
                 if let Some(hook) = self.try_parse_hook_call(expr) {
@@ -91,10 +164,76 @@ impl HirLower {
                 }
             }
             _ => {
-                if let Some(s) = self.lower_stmt(stmt) {
-                    body_stmts.push(s);
+                body_stmts.extend(self.lower_stmts(stmt));
+            }
+            ast::Stmt::FnDef(f) => {
+                let ret_ty = f.return_ty.as_ref().map(|t| lower_type(t)).unwrap_or(TypeInfo::Void);
+                let fn_ty = TypeInfo::Fn(FnType::new(
+                    f.params.iter().map(|p| lower_type(&p.ty)).collect(),
+                    ret_ty,
+                ));
+                body_stmts.push(HirStmt::Let(HirLet {
+                    name: f.name.clone(),
+                    mutable: false,
+                    ty: fn_ty.clone(),
+                    value: HirExpr::Null(fn_ty),
+                    span: f.span,
+                }));
+            }
+        }
+    }
+
+    fn expand_destructuring(
+        &mut self,
+        pattern: &ast::Pattern,
+        value: &ast::Expr,
+        mutable: bool,
+        ty: &Option<ast::Type>,
+        body_stmts: &mut Vec<HirStmt>,
+    ) {
+        let lowered_value = self.lower_expr(value);
+        match pattern {
+            ast::Pattern::Struct { fields, .. } => {
+                let lowered_ty = ty.as_ref().map(|t| lower_type(t)).unwrap_or(TypeInfo::Infer);
+                for (key, subpat) in fields {
+                    let access: HirExpr = if key.parse::<usize>().is_ok() {
+                        HirExpr::Index(HirIndex {
+                            object: Box::new(lowered_value.clone()),
+                            index: Box::new(HirExpr::Number(key.parse().unwrap_or(0.0), TypeInfo::F64)),
+                            ty: TypeInfo::Infer,
+                        })
+                    } else {
+                        HirExpr::Member(HirMember {
+                            object: Box::new(lowered_value.clone()),
+                            field: key.clone(),
+                            ty: TypeInfo::Infer,
+                        })
+                    };
+                    match subpat {
+                        ast::Pattern::Ident(name) => {
+                            body_stmts.push(HirStmt::Let(HirLet {
+                                name: name.clone(),
+                                mutable,
+                                ty: lowered_ty.clone(),
+                                value: access,
+                                span: Default::default(),
+                            }));
+                        }
+                        ast::Pattern::Struct { fields: inner_fields, .. } => {
+                            let inner_value = ast::Expr::Member(Box::new(value.clone()), key.clone());
+                            self.expand_destructuring(
+                                &ast::Pattern::Struct { name: String::new(), fields: inner_fields.clone() },
+                                &inner_value,
+                                mutable,
+                                ty,
+                                body_stmts,
+                            );
+                        }
+                        _ => {}
+                    }
                 }
             }
+            _ => {}
         }
     }
 

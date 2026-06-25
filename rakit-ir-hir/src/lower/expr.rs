@@ -1,7 +1,7 @@
 use rakit_ir_ast as ast;
 use crate::hir::*;
 use crate::ty::*;
-use super::{HirLower, lower_binary_op, lower_unary_op};
+use super::{HirLower, lower_binary_op, lower_unary_op, lower_type};
 
 impl HirLower {
     pub fn lower_expr(&mut self, expr: &ast::Expr) -> HirExpr {
@@ -68,6 +68,42 @@ impl HirLower {
                 self.lower_jsx_fragment(frag)
             }
             ast::Expr::BlockExpr(block) => HirExpr::Block(self.lower_block(block)),
+            ast::Expr::Object(fields) => {
+                let hir_fields = fields.iter().map(|f| HirStructInitField {
+                    name: f.name.clone(),
+                    value: self.lower_expr(&f.value),
+                    spread: f.spread,
+                }).collect();
+                HirExpr::StructInit(HirStructInit {
+                    name: String::new(),
+                    fields: hir_fields,
+                    ty: TypeInfo::Infer,
+                })
+            }
+            ast::Expr::Spread(inner) => self.lower_expr(inner),
+            ast::Expr::ArrowFn(arrow_fn) => {
+                let mut stmts = Vec::new();
+                for p in &arrow_fn.params {
+                    stmts.push(HirStmt::Let(HirLet {
+                        name: p.name.clone(),
+                        mutable: false,
+                        ty: lower_type(&p.ty),
+                        value: HirExpr::Null(TypeInfo::Infer),
+                        span: p.span,
+                    }));
+                }
+                match arrow_fn.body.as_ref() {
+                    ast::Expr::BlockExpr(block) => {
+                        for s in &block.stmts {
+                            stmts.extend(self.lower_stmts(s));
+                        }
+                    }
+                    other => {
+                        stmts.push(HirStmt::Expr(self.lower_expr(other)));
+                    }
+                }
+                HirExpr::Block(HirBlock { stmts })
+            }
         }
     }
 
@@ -83,7 +119,7 @@ impl HirLower {
 
     pub fn lower_block(&mut self, block: &ast::Block) -> HirBlock {
         let stmts: Vec<HirStmt> = block.stmts.iter()
-            .filter_map(|s| self.lower_stmt(s))
+            .flat_map(|s| self.lower_stmts(s))
             .collect();
         HirBlock { stmts }
     }

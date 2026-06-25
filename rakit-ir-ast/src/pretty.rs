@@ -173,6 +173,12 @@ impl AstPrettyPrinter {
                 write!(self.output, "?").unwrap();
             }
             Type::Infer => write!(self.output, "_").unwrap(),
+            Type::Union(variants) => {
+                for (i, v) in variants.iter().enumerate() {
+                    if i > 0 { write!(self.output, " | ").unwrap(); }
+                    self.print_type(v);
+                }
+            },
         }
     }
 
@@ -239,6 +245,29 @@ impl AstPrettyPrinter {
                 write!(self.output, "lempar ").unwrap();
                 self.print_expr(expr);
             },
+            Stmt::HookState(hs) => {
+                write!(self.output, "keadaan({}, {})", hs.state_var, hs.setter_var).unwrap();
+                if let Some(ty) = &hs.ty {
+                    write!(self.output, ": ").unwrap();
+                    self.print_type(ty);
+                }
+                write!(self.output, " = ").unwrap();
+                self.print_expr(&hs.value);
+            },
+            Stmt::FnDef(f) => {
+                write!(self.output, "fungsi {}(", f.name).unwrap();
+                for (i, p) in f.params.iter().enumerate() {
+                    if i > 0 { write!(self.output, ", ").unwrap(); }
+                    write!(self.output, "{}: ", p.name).unwrap();
+                    self.print_type(&p.ty);
+                }
+                write!(self.output, ")").unwrap();
+                if let Some(rt) = &f.return_ty {
+                    write!(self.output, " -> ").unwrap();
+                    self.print_type(rt);
+                }
+                write!(self.output, " {{ ... }}").unwrap();
+            },
         }
     }
 
@@ -264,6 +293,7 @@ impl AstPrettyPrinter {
                     BinaryOp::Le => "<=",
                     BinaryOp::Ge => ">=",
                     BinaryOp::Concat => "++",
+                    BinaryOp::NullCoalescing => "??",
                 }).unwrap();
                 self.print_expr(rhs);
                 write!(self.output, ")").unwrap();
@@ -386,6 +416,33 @@ impl AstPrettyPrinter {
                 write!(self.output, "[").unwrap();
                 self.print_expr(index);
                 write!(self.output, "]").unwrap();
+            },
+            Expr::Object(fields) => {
+                write!(self.output, "{{ ").unwrap();
+                for (i, f) in fields.iter().enumerate() {
+                    if i > 0 { write!(self.output, ", ").unwrap(); }
+                    if f.spread {
+                        write!(self.output, "...").unwrap();
+                        self.print_expr(&f.value);
+                    } else {
+                        write!(self.output, "{}: ", f.name).unwrap();
+                        self.print_expr(&f.value);
+                    }
+                }
+                write!(self.output, " }}").unwrap();
+            },
+            Expr::Spread(expr) => {
+                write!(self.output, "...").unwrap();
+                self.print_expr(expr);
+            },
+            Expr::ArrowFn(arrow) => {
+                write!(self.output, "(").unwrap();
+                for (i, p) in arrow.params.iter().enumerate() {
+                    if i > 0 { write!(self.output, ", ").unwrap(); }
+                    write!(self.output, "{}", p.name).unwrap();
+                }
+                write!(self.output, ") => ").unwrap();
+                self.print_expr(&arrow.body);
             },
         }
     }

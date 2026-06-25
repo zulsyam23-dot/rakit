@@ -106,18 +106,23 @@ impl HirLower {
 
         // Buat let binding untuk setiap prop agar nama prop bisa diakses langsung
         // (seperti Svelte — nama prop langsung available di scope komponen)
-        for p in &c.props {
-            body_stmts.push(HirStmt::Let(HirLet {
-                name: p.name.clone(),
-                mutable: false,
-                ty: lower_type(&p.ty),
-                value: HirExpr::Member(HirMember {
-                    object: Box::new(HirExpr::Ident("props".into(), TypeInfo::Infer)),
-                    field: p.name.clone(),
-                    ty: lower_type(&p.ty),
-                }),
-                span: p.span,
-            }));
+        // Iterate over struct fields of the first (and usually only) param
+        if let Some(first_param) = c.props.first() {
+            if let ast::Type::Struct(fields) = &first_param.ty {
+                for field in fields {
+                    body_stmts.push(HirStmt::Let(HirLet {
+                        name: field.name.clone(),
+                        mutable: false,
+                        ty: lower_type(&field.ty),
+                        value: HirExpr::Member(HirMember {
+                            object: Box::new(HirExpr::Ident("props".into(), TypeInfo::Infer)),
+                            field: field.name.clone(),
+                            ty: lower_type(&field.ty),
+                        }),
+                        span: first_param.span,
+                    }));
+                }
+            }
         }
 
         for stmt in &c.body.statements {
@@ -219,6 +224,13 @@ fn lower_type(ty: &ast::Type) -> TypeInfo {
         }),
         AstTy::Optional(inner) => TypeInfo::Optional(Box::new(lower_type(inner))),
         AstTy::Infer => TypeInfo::Infer,
+        AstTy::Union(tys) => {
+            if tys.is_empty() {
+                TypeInfo::Infer
+            } else {
+                lower_type(&tys[0])
+            }
+        }
     }
 }
 
@@ -233,6 +245,7 @@ fn lower_binary_op(op: ast::BinaryOp) -> HirBinaryOp {
         Lt => HirBinaryOp::Lt, Gt => HirBinaryOp::Gt,
         Le => HirBinaryOp::Le, Ge => HirBinaryOp::Ge,
         Concat => HirBinaryOp::Concat,
+        NullCoalescing => HirBinaryOp::NullCoalescing,
     }
 }
 

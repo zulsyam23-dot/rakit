@@ -1,0 +1,14 @@
+// hello.rakit — Program sederhana untuk test Brak pipeline
+fungsi tambah(a: I32, b: I32) -> I32 {
+    a + b
+}
+
+fungsi kalikan(a: I32, b: I32) -> I32 {
+    a * b
+}
+
+fungsi main() -> I32 {
+    konstan hasil = tambah(2, 3);
+    konstan kali = kalikan(hasil, 10);
+    kali
+}

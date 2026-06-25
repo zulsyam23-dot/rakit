@@ -8,6 +8,25 @@ pub enum AttrValue {
     Expression(String),
 }
 
+use std::fmt;
+
+impl Default for AttrValue {
+    fn default() -> Self {
+        AttrValue::String(String::new())
+    }
+}
+
+impl fmt::Display for AttrValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AttrValue::String(s) => write!(f, "{}", s),
+            AttrValue::Bool(b) => write!(f, "{}", b),
+            AttrValue::Number(n) => write!(f, "{}", n),
+            AttrValue::Expression(e) => write!(f, "{}", e),
+        }
+    }
+}
+
 impl AttrValue {
     pub fn as_string(&self) -> Option<&str> {
         match self {
@@ -60,6 +79,7 @@ pub struct FragmentNode {
 pub struct ComponentNode {
     pub name: String,
     pub props: HashMap<String, AttrValue>,
+    pub children: Vec<VDomNode>,
     pub key: Option<String>,
 }
 
@@ -70,6 +90,12 @@ pub enum VDomNode {
     Fragment(FragmentNode),
     Component(ComponentNode),
     Empty,
+}
+
+impl Default for VDomNode {
+    fn default() -> Self {
+        VDomNode::Empty
+    }
 }
 
 impl VDomNode {
@@ -117,6 +143,16 @@ impl VDomNode {
         VDomNode::Component(ComponentNode {
             name: name.to_string(),
             props,
+            children: Vec::new(),
+            key,
+        })
+    }
+
+    pub fn component_with_children(name: &str, props: HashMap<String, AttrValue>, children: Vec<VDomNode>, key: Option<String>) -> Self {
+        VDomNode::Component(ComponentNode {
+            name: name.to_string(),
+            props,
+            children,
             key,
         })
     }
@@ -144,6 +180,7 @@ impl VDomNode {
         match self {
             VDomNode::Element(e) => &e.children,
             VDomNode::Fragment(f) => &f.children,
+            VDomNode::Component(c) => &c.children,
             _ => &[],
         }
     }
@@ -152,6 +189,7 @@ impl VDomNode {
         match self {
             VDomNode::Element(e) => Some(&mut e.children),
             VDomNode::Fragment(f) => Some(&mut f.children),
+            VDomNode::Component(c) => Some(&mut c.children),
             _ => None,
         }
     }

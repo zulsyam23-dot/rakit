@@ -1,8 +1,5 @@
-/// Minimal Brak IR type definitions.
-/// NOTE: Ganti dengan import dari `brak_ir_ast` crate saat tersedia.
-///
-/// Brak adalah target compiler Rakit. Definisi ini bersifat sementara
-/// untuk keperluan kompilasi dan prototyping.
+/// Brak IR type definitions for Rakit compiler.
+/// Intermediate representation between HIR and code generation.
 
 #[derive(Debug, Clone)]
 pub enum BrakItem {
@@ -17,6 +14,8 @@ pub struct BrakFnDef {
     pub params: Vec<BrakParam>,
     pub return_ty: Option<BrakTy>,
     pub body: BrakBlock,
+    pub is_component: bool,
+    pub hook_calls: Vec<BrakHookCall>,
 }
 
 #[derive(Debug, Clone)]
@@ -62,6 +61,9 @@ pub enum BrakStmt {
     While(BrakWhile),
     Return(Option<BrakExpr>),
     Block(BrakBlock),
+    Match(BrakMatch),
+    Try(BrakTry),
+    Throw(BrakExpr),
 }
 
 #[derive(Debug, Clone)]
@@ -86,6 +88,63 @@ pub struct BrakWhile {
 }
 
 #[derive(Debug, Clone)]
+pub struct BrakMatch {
+    pub expr: Box<BrakExpr>,
+    pub arms: Vec<BrakMatchArm>,
+}
+
+#[derive(Debug, Clone)]
+pub struct BrakMatchArm {
+    pub pattern: BrakPattern,
+    pub body: BrakExpr,
+}
+
+#[derive(Debug, Clone)]
+pub enum BrakPattern {
+    Wildcard,
+    Literal(BrakLiteral),
+    Ident(String),
+}
+
+#[derive(Debug, Clone)]
+pub enum BrakLiteral {
+    Number(f64),
+    String(String),
+    Bool(bool),
+    Null,
+}
+
+#[derive(Debug, Clone)]
+pub struct BrakTry {
+    pub try_block: BrakBlock,
+    pub catch_var: String,
+    pub catch_block: BrakBlock,
+}
+
+#[derive(Debug, Clone)]
+pub struct BrakHookCall {
+    pub kind: BrakHookKind,
+}
+
+#[derive(Debug, Clone)]
+pub enum BrakHookKind {
+    State {
+        state_var: String,
+        setter_var: String,
+        initial: Box<BrakExpr>,
+    },
+    Effect {
+        callback: Box<BrakExpr>,
+        deps: Vec<BrakExpr>,
+    },
+    Memo {
+        result_var: String,
+        callback: Box<BrakExpr>,
+        deps: Vec<BrakExpr>,
+    },
+}
+
+#[derive(Debug, Clone)]
 pub enum BrakExpr {
     Number(f64),
     String(String),
@@ -101,13 +160,19 @@ pub enum BrakExpr {
     Array(Vec<BrakExpr>),
     StructInit(String, Vec<(String, BrakExpr)>),
     Block(BrakBlock),
+    Ternary(Box<BrakExpr>, Box<BrakExpr>, Box<BrakExpr>),
+    ArrowFn(Vec<String>, Box<BrakExpr>),
+    Object(Vec<(String, BrakExpr)>),
+    Spread(Box<BrakExpr>),
+    Template(Vec<BrakExpr>),
+    Match(Box<BrakMatch>),
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum BrakBinaryOp {
     Add, Sub, Mul, Div, Mod,
     And, Or, Eq, Ne, Lt, Gt, Le, Ge,
-    Concat,
+    Concat, NullCoalescing,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -130,6 +195,7 @@ pub enum BrakTy {
     Struct(Vec<(String, BrakTy)>),
     Enum(Vec<String>),
     Named(String),
+    Any,
 }
 
 #[derive(Debug, Clone)]

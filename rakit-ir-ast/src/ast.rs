@@ -109,11 +109,24 @@ pub enum Stmt {
     Continue(Span),
     Try(TryStmt),
     Throw(Expr, Span),
+    HookState(HookStateDef),
+    FnDef(FnDef),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct LetDef {
     pub name: String,
+    pub mutable: bool,
+    pub ty: Option<Type>,
+    pub value: Expr,
+    pub pattern: Option<Pattern>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct HookStateDef {
+    pub state_var: String,
+    pub setter_var: String,
     pub mutable: bool,
     pub ty: Option<Type>,
     pub value: Expr,
@@ -179,7 +192,10 @@ pub enum Expr {
     Member(Box<Expr>, String),
     Index(Box<Expr>, Box<Expr>),
     StructInit(String, Vec<StructInitField>),
+    Object(Vec<StructInitField>),
     Array(Vec<Expr>),
+    Spread(Box<Expr>),
+    ArrowFn(ArrowFn),
     JsxElement(Box<JsxElement>),
     JsxFragment(Box<JsxFragment>),
     BlockExpr(Block),
@@ -201,12 +217,20 @@ pub struct StructInitField {
     pub spread: bool,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ArrowFn {
+    pub params: Vec<FnParam>,
+    pub body: Box<Expr>,
+    pub span: Span,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum BinaryOp {
     Add, Sub, Mul, Div, Mod,
     And, Or,
     Eq, Ne, Lt, Gt, Le, Ge,
     Concat,
+    NullCoalescing,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

@@ -34,10 +34,46 @@ impl DomBackend {
         }
     }
 
-    fn alloc_id(&self) -> u64 {
+    pub fn alloc_id(&self) -> u64 {
         let id = self.next_id.get();
         self.next_id.set(id + 1);
         id
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn cache_node(&self, id: u64, node: web_sys::Node) {
+        self.node_cache.borrow_mut().insert(id, node);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn cache_node(&self, id: u64, node: u64) {
+        self.node_cache.borrow_mut().insert(id, node);
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn get_node(&self, id: u64) -> Option<web_sys::Node> {
+        self.node_cache.borrow().get(&id).cloned()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn get_node(&self, id: u64) -> Option<u64> {
+        self.node_cache.borrow().get(&id).copied()
+    }
+
+    pub fn remove_node(&self, id: u64) {
+        self.node_cache.borrow_mut().remove(&id);
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn root_node(&self) -> Option<web_sys::Node> {
+        let doc = document();
+        if let Some(el) = doc.get_element_by_id(&self.root_id) {
+            return Some(el.into());
+        }
+        if let Some(el) = doc.get_element_by_id("root") {
+            return Some(el.into());
+        }
+        doc.body().map(|b| b.into())
     }
 
     pub fn render_to_dom(&self, node: &VDomNode, parent_id: u64) {
@@ -88,6 +124,64 @@ impl DomBackend {
             }
             VDomNode::Empty => {}
             VDomNode::Component(_) => {}
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn create_dom_node(&self, node: &VDomNode) -> (u64, web_sys::Node) {
+        use wasm_bindgen::JsCast;
+
+        match node {
+            VDomNode::Element(elem) => {
+                let doc = document();
+                let el: web_sys::Element = doc.create_element(&elem.tag).unwrap();
+
+                for (name, value) in &elem.attrs {
+                    let _ = el.set_attribute(name, &self.attr_str(value));
+                }
+
+                let child_id = self.alloc_id();
+                let node_ref: web_sys::Node = el.unchecked_into();
+                self.node_cache.borrow_mut().insert(child_id, node_ref.clone());
+
+                for child in &elem.children {
+                    self.render_to_dom_wasm(child, child_id);
+                }
+
+                (child_id, node_ref)
+            }
+            VDomNode::Text(text) => {
+                let doc = document();
+                let text_node = doc.create_text_node(&text.value);
+                let id = self.alloc_id();
+                (id, text_node.into())
+            }
+            VDomNode::Fragment(frag) => {
+                let doc = document();
+                let frag_node = doc.create_document_fragment();
+                for child in &frag.children {
+                    let (_, child_node) = self.create_dom_node(child);
+                    let _ = frag_node.append_child(&child_node);
+                }
+                let id = self.alloc_id();
+                self.node_cache.borrow_mut().insert(id, frag_node.clone().into());
+                (id, frag_node.into())
+            }
+            VDomNode::Empty => {
+                let doc = document();
+                let text_node = doc.create_text_node("");
+                let id = self.alloc_id();
+                (id, text_node.into())
+            }
+            VDomNode::Component(comp) => {
+                let doc = document();
+                let el: web_sys::Element = doc.create_element("div").unwrap();
+                el.set_attribute("data-component", &comp.name).unwrap();
+                let id = self.alloc_id();
+                let node_ref: web_sys::Node = el.unchecked_into();
+                self.node_cache.borrow_mut().insert(id, node_ref.clone());
+                (id, node_ref)
+            }
         }
     }
 
@@ -142,7 +236,15 @@ impl DomBackend {
                         closure.forget();
                     }
                 }
-                Patch::DetachEvent { .. } => {}
+                Patch::DetachEvent { path, handler_id } => {
+                    if let Some(node) = self.resolve_path(path) {
+                        let event_name = handler_id.to_string();
+                        if let Some(el) = node.dyn_ref::<web_sys::Element>() {
+                            let _ = el.remove_attribute(&format!("data-on-{}", event_name));
+                        }
+                        let _ = handler_id;
+                    }
+                }
                 Patch::Remove { path } => {
                     if let Some(node) = self.resolve_path(path) {
                         if let Some(parent) = node.parent_node() {
@@ -151,21 +253,60 @@ impl DomBackend {
                     }
                 }
                 Patch::Insert {
-                    parent_path: _,
-                    index: _,
+                    parent_path,
+                    index,
                     node,
                 } => {
-                    let _ = node;
+                    if let Some(parent) = self.resolve_path(parent_path) {
+                        let (_, new_node) = self.create_dom_node(node);
+                        let child_count = parent.child_nodes().length();
+                        if *index as u32 >= child_count {
+                            let _ = parent.append_child(&new_node);
+                        } else {
+                            let children = parent.child_nodes();
+                            if let Some(ref_node) = children.get(*index as u32) {
+                                let _ = parent
+                                    .insert_before(&new_node, Some(&ref_node));
+                            } else {
+                                let _ = parent.append_child(&new_node);
+                            }
+                        }
+                        let _ = index;
+                    }
                 }
                 Patch::Replace { old_path, new_node } => {
                     if let Some(old) = self.resolve_path(old_path) {
                         if let Some(parent) = old.parent_node() {
-                            let _ = parent.remove_child(&old);
-                            let _ = new_node;
+                            let (_, fresh_node) = self.create_dom_node(new_node);
+                            let _ = parent.replace_child(&fresh_node, &old);
                         }
                     }
                 }
-                Patch::Move { .. } => {}
+                Patch::Move {
+                    from_path,
+                    to_parent,
+                    to_index,
+                } => {
+                    if let Some(node) = self.resolve_path(from_path) {
+                        if let Some(parent) = node.parent_node() {
+                            let _ = parent.remove_child(&node);
+                        }
+                        if let Some(new_parent) = self.resolve_path(to_parent) {
+                            let child_count = new_parent.child_nodes().length();
+                            if *to_index as u32 >= child_count {
+                                let _ = new_parent.append_child(&node);
+                            } else {
+                                let children = new_parent.child_nodes();
+                                if let Some(ref_node) = children.get(*to_index as u32) {
+                                    let _ = new_parent
+                                        .insert_before(&node, Some(&ref_node));
+                                } else {
+                                    let _ = new_parent.append_child(&node);
+                                }
+                            }
+                        }
+                    }
+                }
                 Patch::RemoveAttr { path, name } => {
                     if let Some(node) = self.resolve_path(path) {
                         if let Some(el) = node.dyn_ref::<web_sys::Element>() {
@@ -200,11 +341,11 @@ impl DomBackend {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn extract_wasm_event(event: &web_sys::Event) -> EventData {
+    pub fn extract_wasm_event(event: &web_sys::Event) -> rakit_runtime::event::EventData {
         use wasm_bindgen::JsCast;
 
-        let event_type = EventType::from(event.type_().as_str());
-        let mut data = EventData::new(event_type);
+        let event_type = rakit_runtime::event::EventType::from(event.type_().as_str());
+        let mut data = rakit_runtime::event::EventData::new(event_type);
 
         data.target_id = event
             .target()

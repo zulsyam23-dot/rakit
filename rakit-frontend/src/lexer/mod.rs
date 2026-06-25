@@ -110,6 +110,7 @@ impl<'a> Lexer<'a> {
         m.insert("konteks",   TokenKind::Context);
         m.insert("sebagai",   TokenKind::As);
         m.insert("semua",     TokenKind::Wildcard);
+        m.insert("jalan",     TokenKind::Try);
         m
     }
 

@@ -67,6 +67,8 @@ pub trait UiBackend {
 
     fn detach_event(&mut self, elem: &Self::ElementHandle, handler_id: u64);
 
+    fn resolve_path(&self, path: &[usize], root: &Self::ElementHandle) -> Option<Self::ElementHandle>;
+
     fn dispatch_event(&self, handler_id: u64, data: EventData);
 
     fn apply_stylesheet(&mut self, window: &Self::WindowHandle, css: &str);

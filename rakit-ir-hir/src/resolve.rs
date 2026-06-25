@@ -34,16 +34,65 @@ enum EntryKind {
 
 impl NameResolver {
     pub fn new() -> Self {
+        let mut globals = HashMap::new();
+        Self::register_builtins(&mut globals);
         NameResolver {
-            scope_stack: vec![Scope { bindings: HashMap::new(), depth: 0 }],
+            scope_stack: vec![Scope { bindings: globals, depth: 0 }],
             diagnostics: Vec::new(),
             errors: 0,
         }
     }
 
+    fn register_builtins(scope: &mut HashMap<String, ScopeEntry>) {
+        let mut entry = |name: &str, kind: EntryKind| {
+            scope.insert(name.to_string(), ScopeEntry {
+                kind, ty: None, span: Span::empty(0),
+            });
+        };
+        // Standard JavaScript/browser globals
+        for name in &[
+            // Types & constructors
+            "String", "Array", "Object", "Number", "Boolean", "Date", "Map", "Set",
+            "WeakMap", "WeakSet", "Symbol", "BigInt", "RegExp", "Error", "Promise",
+            // Math & JSON
+            "Math", "JSON", "Atomics", "Reflect", "Proxy",
+            // Browser APIs
+            "console", "window", "document", "history", "location", "navigator",
+            "localStorage", "sessionStorage", "fetch", "WebSocket", "Worker",
+            "FileReader", "FormData", "Headers", "Request", "Response", "URL",
+            "URLSearchParams", "IntersectionObserver", "MutationObserver",
+            "ResizeObserver", "AbortController", "AbortSignal",
+            // Timer functions
+            "setTimeout", "setInterval", "clearTimeout", "clearInterval",
+            "requestAnimationFrame", "cancelAnimationFrame", "requestIdleCallback",
+            // Parsing / encoding
+            "parseInt", "parseFloat", "isNaN", "isFinite", "decodeURI",
+            "encodeURI", "decodeURIComponent", "encodeURIComponent",
+            // Rakit-specific runtime
+            "Timer", "gunakanFetch", "gunakanKonteks",
+            // Rakit stdlib
+            "render", "tampilkan", "cetak", "parseJSON", "stringifyJSON",
+            "konteks", "tunda", "sekarang", "CSS", "waktu", "Hasil",
+            "jalan", "acu", "panggil", "pengedger", "berhenti",
+        ] {
+            entry(name, EntryKind::Imported);
+        }
+    }
+
     pub fn resolve_program(&mut self, program: &mut HirProgram) -> bool {
         for i in 0..program.items.len() {
-            Self::register_top_level(&program.items[i], &mut self.scope_stack[0]);
+            match &program.items[i] {
+                HirItem::Import(imp) => {
+                    for name in &imp.names {
+                        self.scope_stack[0].bindings.insert(name.clone(), ScopeEntry {
+                            kind: EntryKind::Imported,
+                            ty: None,
+                            span: Span::empty(0),
+                        });
+                    }
+                }
+                _ => Self::register_top_level(&program.items[i], &mut self.scope_stack[0]),
+            }
         }
         for item in &mut program.items {
             self.resolve_item(item);
@@ -94,6 +143,13 @@ impl NameResolver {
                         name: e.name.clone(),
                         variants: e.variants.clone(),
                     })),
+                    span: Span::empty(0),
+                });
+            }
+            HirItem::TypeAlias(t) => {
+                scope.bindings.insert(t.name.clone(), ScopeEntry {
+                    kind: EntryKind::TypeAlias,
+                    ty: Some(t.ty.clone()),
                     span: Span::empty(0),
                 });
             }
@@ -299,7 +355,10 @@ impl NameResolver {
 
 fn is_builtin(name: &str) -> bool {
     matches!(name, "h" | "cetak" | "benar" | "salah" | "batal"
-        | "keadaan" | "efek" | "ingat")
+        | "keadaan" | "efek" | "ingat" | "render"
+        | "tampilkan" | "konteks" | "parseJSON" | "stringifyJSON"
+        | "tunda" | "sekarang" | "CSS" | "waktu" | "Hasil"
+        | "jalan" | "acu" | "panggil" | "pengedger" | "berhenti")
 }
 
 #[cfg(test)]

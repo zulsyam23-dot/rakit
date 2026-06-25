@@ -11,6 +11,8 @@ impl<'a> Parser<'a> {
         match self.peek().kind {
             TokenKind::Let => self.parse_let(false),
             TokenKind::Mut => self.parse_let(true),
+            TokenKind::State => self.parse_state(),
+            TokenKind::Fn => self.parse_fn_stmt(),
             TokenKind::If => self.parse_if(),
             TokenKind::While => self.parse_while(),
             TokenKind::For => self.parse_for(),
@@ -32,6 +34,14 @@ impl<'a> Parser<'a> {
                 let block = self.parse_block().map_err(|e| vec![e])?;
                 Ok(Stmt::Block(block))
             }
+            TokenKind::Render => {
+                let start = self.current_span();
+                self.advance();
+                let expr = self.parse_expr()?;
+                let end = self.current_span();
+                self.eat(TokenKind::Semicolon);
+                Ok(Stmt::Expr(expr, start.merge(end)))
+            }
             _ => {
                 let expr = self.parse_expr()?;
                 let span = self.current_span();
@@ -41,11 +51,85 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_fn_stmt(&mut self) -> Result<Stmt> {
+        let start = self.current_span();
+        self.advance(); // consume 'fungsi'
+        let name = self.expect_ident().map_err(|e| vec![e])?;
+        self.expect(TokenKind::LParen).map_err(|e| vec![e])?;
+        let mut params = Vec::new();
+        if !self.check(&[TokenKind::RParen]) {
+            loop {
+                params.push(self.parse_fn_param().map_err(|e| vec![e])?);
+                if !self.eat(TokenKind::Comma) {
+                    break;
+                }
+            }
+        }
+        self.expect(TokenKind::RParen).map_err(|e| vec![e])?;
+        let return_ty = if self.eat(TokenKind::Arrow) {
+            Some(self.parse_type().map_err(|e| vec![e])?)
+        } else {
+            None
+        };
+        let body = self.parse_block().map_err(|e| vec![e])?;
+        let end = self.current_span();
+        Ok(Stmt::FnDef(FnDef {
+            name,
+            params,
+            return_ty,
+            body,
+            span: start.merge(end),
+        }))
+    }
+
+    pub(super) fn expect_ident_name(&mut self) -> std::result::Result<String, Diagnostic> {
+        if self.peek().kind == TokenKind::Ident || self.peek().is_keyword() {
+            Ok(self.advance_lexeme())
+        } else {
+            Err(self.error_expected("identifier"))
+        }
+    }
+
+    fn parse_state(&mut self) -> Result<Stmt> {
+        let start = self.current_span();
+        self.advance(); // consume 'keadaan'
+        self.expect(TokenKind::LParen).map_err(|e| vec![e])?;
+        let id1 = self.expect_ident_name().map_err(|e| vec![e])?;
+        self.expect(TokenKind::Comma).map_err(|e| vec![e])?;
+        let id2 = self.expect_ident_name().map_err(|e| vec![e])?;
+        self.expect(TokenKind::RParen).map_err(|e| vec![e])?;
+        // Optional type annotation: : Type
+        let ty = if self.eat(TokenKind::Colon) {
+            Some(self.parse_type().map_err(|e| vec![e])?)
+        } else {
+            None
+        };
+        self.expect(TokenKind::Assign).map_err(|e| vec![e])?;
+        let value = self.parse_expr()?;
+        self.eat(TokenKind::Semicolon);
+        Ok(Stmt::HookState(HookStateDef {
+            state_var: id1,
+            setter_var: id2,
+            mutable: true,
+            ty,
+            value,
+            span: start,
+        }))
+    }
+
     fn parse_let(&mut self, mutable: bool) -> Result<Stmt> {
         let start = self.current_span();
         let _keyword = self.advance_lexeme();
 
-        let name = self.expect_ident().map_err(|e| vec![e])?;
+        let (name, pattern) = if self.check(&[TokenKind::LBrace]) {
+            let pat = self.parse_pattern()?;
+            ("_destructure".to_string(), Some(pat))
+        } else if self.check(&[TokenKind::LBracket]) {
+            let pat = self.parse_pattern()?;
+            ("_destructure".to_string(), Some(pat))
+        } else {
+            (self.expect_ident_name().map_err(|e| vec![e])?, None)
+        };
 
         let ty = if self.eat(TokenKind::Colon) {
             Some(self.parse_type().map_err(|e| vec![e])?)
@@ -66,6 +150,7 @@ impl<'a> Parser<'a> {
             mutable,
             ty,
             value,
+            pattern,
             span: start,
         }))
     }
@@ -195,9 +280,38 @@ impl<'a> Parser<'a> {
                 };
                 Ok(Pattern::Literal(lit))
             }
-            TokenKind::Ident => {
+            _ if self.peek().kind == TokenKind::Ident || self.peek().is_keyword() => {
                 let name = self.advance_lexeme();
                 Ok(Pattern::Ident(name))
+            }
+            TokenKind::LBrace => {
+                self.advance();
+                let mut fields = Vec::new();
+                while !self.check(&[TokenKind::RBrace]) && !self.check(&[TokenKind::Eof]) {
+                    let fname = self.expect_ident_name().map_err(|e| vec![e])?;
+                    let subpat = if self.eat(TokenKind::Colon) {
+                        self.parse_pattern()?
+                    } else {
+                        Pattern::Ident(fname.clone())
+                    };
+                    fields.push((fname, subpat));
+                    if !self.eat(TokenKind::Comma) { break; }
+                }
+                self.expect(TokenKind::RBrace).map_err(|e| vec![e])?;
+                Ok(Pattern::Struct { name: String::new(), fields })
+            }
+            TokenKind::LBracket => {
+                self.advance();
+                let mut fields = Vec::new();
+                let mut idx = 0usize;
+                while !self.check(&[TokenKind::RBracket]) && !self.check(&[TokenKind::Eof]) {
+                    let pat = self.parse_pattern()?;
+                    fields.push((idx.to_string(), pat));
+                    idx += 1;
+                    if !self.eat(TokenKind::Comma) { break; }
+                }
+                self.expect(TokenKind::RBracket).map_err(|e| vec![e])?;
+                Ok(Pattern::Struct { name: String::new(), fields })
             }
             _ => Err(vec![self.error_expected("pola pattern")]),
         }
@@ -224,7 +338,14 @@ impl<'a> Parser<'a> {
         let try_block = self.parse_block().map_err(|e| vec![e])?;
 
         self.expect(TokenKind::Catch).map_err(|e| vec![e])?;
-        let catch_var = self.expect_ident().map_err(|e| vec![e])?;
+        self.expect(TokenKind::LParen).map_err(|e| vec![e])?;
+        let catch_var = if self.peek().kind == TokenKind::Underscore {
+            self.advance();
+            "_".to_string()
+        } else {
+            self.expect_ident_name().map_err(|e| vec![e])?
+        };
+        self.expect(TokenKind::RParen).map_err(|e| vec![e])?;
         let catch_block = self.parse_block().map_err(|e| vec![e])?;
 
         Ok(Stmt::Try(TryStmt {

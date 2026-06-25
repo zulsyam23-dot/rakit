@@ -20,6 +20,11 @@ rakit-opt = { path = "../rakit-opt" }
 rakit-pm = { path = "../rakit-pm" }
 rakit-doc = { path = "../rakit-doc" }
 rakit-polyglot = { path = "../rakit-polyglot" }
+rakit-codegen = { path = "../rakit-codegen" }
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+tiny_http = "0.12"
+notify = "6"
+tungstenite = "0.21"
+url = "2"

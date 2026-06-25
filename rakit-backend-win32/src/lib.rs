@@ -191,6 +191,8 @@ impl UiBackend for Win32Backend {
 
     fn detach_event(&mut self, _elem: &u64, _handler_id: u64) {}
 
+    fn resolve_path(&self, _path: &[usize], _root: &u64) -> Option<u64> { None }
+
     fn dispatch_event(&self, handler_id: u64, data: EventData) {
         dispatch_event(handler_id, data);
     }

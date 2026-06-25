@@ -2,9 +2,25 @@
 name = "rakit-bridge"
 version = "0.1.0"
 edition = "2021"
-description = "Rakit HIR → Brak IR bridge"
+description = "Rakit → Brak IR bridge — uses Brak as compilation engine"
 
 [dependencies]
 rakit-core = { path = "../rakit-core" }
 rakit-ir-hir = { path = "../rakit-ir-hir" }
 serde = { version = "1", features = ["derive"] }
+
+# Brak Language Construction Toolkit — compilation engine
+brak-core = { path = "C:/Users/PC/Documents/anak/brak/brak-core" }
+brak-ir-ast = { path = "C:/Users/PC/Documents/anak/brak/brak-ir-ast" }
+brak-ir-hir = { path = "C:/Users/PC/Documents/anak/brak/brak-ir-hir" }
+brak-ir-mir = { path = "C:/Users/PC/Documents/anak/brak/brak-ir-mir" }
+brak-ir-lir = { path = "C:/Users/PC/Documents/anak/brak/brak-ir-lir" }
+brak-codegen-traits = { path = "C:/Users/PC/Documents/anak/brak/brak-codegen-traits" }
+brak-codegen-wasm = { path = "C:/Users/PC/Documents/anak/brak/brak-codegen-wasm" }
+brak-codegen-c = { path = "C:/Users/PC/Documents/anak/brak/brak-codegen-c" }
+brak-opt-traits = { path = "C:/Users/PC/Documents/anak/brak/brak-opt-traits" }
+brak-opt-dce = { path = "C:/Users/PC/Documents/anak/brak/brak-opt-dce" }
+brak-opt-cp = { path = "C:/Users/PC/Documents/anak/brak/brak-opt-cp" }
+brak-opt-gvn = { path = "C:/Users/PC/Documents/anak/brak/brak-opt-gvn" }
+brak-opt-inline = { path = "C:/Users/PC/Documents/anak/brak/brak-opt-inline" }
+brak-opt-licm = { path = "C:/Users/PC/Documents/anak/brak/brak-opt-licm" }

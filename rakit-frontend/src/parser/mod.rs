@@ -60,6 +60,42 @@ impl<'a> Parser<'a> {
         &self.diagnostics
     }
 
+    /// Check if current `<` is a generic type argument (not JSX)
+    fn skippable_generic(&mut self) -> bool {
+        // Heuristic: <Ident...> is likely a generic if it's after a function/type name
+        // and the tokens after Ident look like a type list (>, ,, =, ::, or another <)
+        let pos = self.pos;
+        self.ensure_loaded(2);
+        let next1 = self.tokens.get(pos + 1);
+        let next2 = self.tokens.get(pos + 2);
+        let next_is_ident = next1.map(|t| {
+            t.kind == TokenKind::Ident || t.kind == TokenKind::Underscore
+        }).unwrap_or(false);
+        if !next_is_ident {
+            return false;
+        }
+        // After the Ident, the next token should be > (close generic), , (more types),
+        // < (nested generic), = (default type), or :: (path separator)
+        // If it's a binary operator, ? or any other token, it's a comparison
+        matches!(next2.map(|t| t.kind), Some(TokenKind::Gt)
+            | Some(TokenKind::Comma)
+            | Some(TokenKind::Lt))
+    }
+
+    /// Skip over `<Type1, Type2, ...>` parameter list
+    fn skip_generic_params(&mut self) {
+        self.advance(); // consume <
+        let mut depth = 1;
+        while depth > 0 && !self.check(&[TokenKind::Eof]) {
+            match self.peek().kind {
+                TokenKind::Lt => depth += 1,
+                TokenKind::Gt => depth -= 1,
+                _ => {}
+            }
+            self.advance();
+        }
+    }
+
     fn parse_item(&mut self) -> std::result::Result<Item, Diagnostic> {
         match self.peek().kind {
             TokenKind::Fn => self.parse_fn_item(),
@@ -67,9 +103,11 @@ impl<'a> Parser<'a> {
             TokenKind::Struct => self.parse_struct_item(),
             TokenKind::Enum => self.parse_enum_item(),
             TokenKind::Type => self.parse_type_alias(),
+            TokenKind::Context => self.parse_context_item(),
             TokenKind::Import => self.parse_import(),
+            TokenKind::From => self.parse_from_import(),
             TokenKind::Export => self.parse_export(),
-            _ => Err(self.error_expected("item (fungsi/komponen/struk/pilihan/tipe/impor/ekspor)")),
+            _ => Err(self.error_expected("item (fungsi/komponen/struk/pilihan/tipe/impor/ekspor/konteks)")),
         }
     }
 
@@ -238,6 +276,21 @@ impl<'a> Parser<'a> {
         }))
     }
 
+    fn parse_context_item(&mut self) -> std::result::Result<Item, Diagnostic> {
+        let start = self.current_span();
+        self.advance();
+        let name = self.expect_ident()?;
+        self.expect(TokenKind::Assign)?;
+        let ty = self.parse_type()?;
+        self.eat(TokenKind::Semicolon);
+        let end = self.current_span();
+        Ok(Item::TypeAlias(TypeAlias {
+            name,
+            ty,
+            span: start.merge(end),
+        }))
+    }
+
     fn parse_import(&mut self) -> std::result::Result<Item, Diagnostic> {
         let start = self.current_span();
         self.advance();
@@ -250,6 +303,44 @@ impl<'a> Parser<'a> {
         if !self.check(&[TokenKind::RBrace]) {
             loop {
                 names.push(self.expect_ident()?);
+                if !self.eat(TokenKind::Comma) {
+                    break;
+                }
+            }
+        }
+        self.expect(TokenKind::RBrace)?;
+        self.eat(TokenKind::Semicolon);
+        let end = self.current_span();
+
+        Ok(Item::Import(Import {
+            module,
+            names,
+            span: start.merge(end),
+        }))
+    }
+
+    fn parse_from_import(&mut self) -> std::result::Result<Item, Diagnostic> {
+        let start = self.current_span();
+        self.advance();
+
+        self.expect(TokenKind::String)?;
+        let module = self.prev_lexeme();
+
+        if self.peek().kind != TokenKind::Ident || self.peek().lexeme != "ambil" {
+            return Err(self.error_expected("'ambil'"));
+        }
+        self.advance();
+
+        self.expect(TokenKind::LBrace)?;
+        let mut names = Vec::new();
+        if !self.check(&[TokenKind::RBrace]) {
+            loop {
+                let name = if self.peek().kind == TokenKind::Ident {
+                    self.advance_lexeme()
+                } else {
+                    self.advance_lexeme()
+                };
+                names.push(name);
                 if !self.eat(TokenKind::Comma) {
                     break;
                 }
@@ -298,6 +389,22 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse_type(&mut self) -> std::result::Result<Type, Diagnostic> {
+        let ty = self.parse_type_atom()?;
+        if self.eat(TokenKind::Pipe) {
+            let mut variants = vec![ty];
+            loop {
+                variants.push(self.parse_type_atom()?);
+                if !self.eat(TokenKind::Pipe) { break; }
+            }
+            Ok(Type::Union(variants))
+        } else if self.eat(TokenKind::Question) {
+            Ok(Type::Optional(Box::new(ty)))
+        } else {
+            Ok(ty)
+        }
+    }
+
+    fn parse_type_atom(&mut self) -> std::result::Result<Type, Diagnostic> {
         match self.peek().kind {
             TokenKind::Ident => {
                 let name = self.advance_lexeme();
@@ -315,19 +422,36 @@ impl<'a> Parser<'a> {
                         params,
                         span: self.prev_span(),
                     }))
-                } else if self.eat(TokenKind::Question) {
-                    Ok(Type::Optional(Box::new(Type::Named(name))))
                 } else {
                     Ok(Type::Named(name))
                 }
             }
+            TokenKind::String => {
+                let lexeme = self.advance_lexeme();
+                Ok(Type::Named(format!("\"{}\"", lexeme)))
+            }
             TokenKind::LParen => {
                 self.advance();
                 let mut params = Vec::new();
-                loop {
-                    params.push(self.parse_type()?);
-                    if !self.eat(TokenKind::Comma) {
-                        break;
+                if !self.check(&[TokenKind::RParen]) {
+                    loop {
+                        // Check for named param: name: Type (skip the name)
+                        if self.check(&[TokenKind::Ident]) || self.check(&[TokenKind::Underscore]) {
+                            let saved = self.pos;
+                            let name = self.advance_lexeme();
+                            if self.eat(TokenKind::Colon) {
+                                let ty = self.parse_type()?;
+                                params.push(ty);
+                            } else {
+                                self.pos = saved;
+                                params.push(self.parse_type()?);
+                            }
+                        } else {
+                            params.push(self.parse_type()?);
+                        }
+                        if !self.eat(TokenKind::Comma) {
+                            break;
+                        }
                     }
                 }
                 self.expect(TokenKind::RParen)?;
@@ -344,9 +468,47 @@ impl<'a> Parser<'a> {
                 self.expect(TokenKind::RBracket)?;
                 Ok(Type::Array(Box::new(inner)))
             }
+            TokenKind::LBrace => {
+                self.advance();
+                let mut fields = Vec::new();
+                while !self.check(&[TokenKind::RBrace]) && !self.check(&[TokenKind::Eof]) {
+                    let name = if self.peek().kind.is_ident_like() {
+                        self.advance_lexeme()
+                    } else {
+                        return Err(self.error_expected("nama field"));
+                    };
+                    let _optional = self.eat(TokenKind::Question);
+                    self.expect(TokenKind::Colon)?;
+                    let ty = self.parse_type()?;
+                    fields.push(StructField { name, ty, span: self.prev_span() });
+                    if !self.eat(TokenKind::Comma) { break; }
+                }
+                self.expect(TokenKind::RBrace)?;
+                Ok(Type::Struct(fields))
+            }
             TokenKind::Underscore => {
                 self.advance();
                 Ok(Type::Infer)
+            }
+            _ if self.peek().is_keyword() => {
+                let name = self.advance_lexeme();
+                if self.eat(TokenKind::Lt) {
+                    let mut params = Vec::new();
+                    loop {
+                        params.push(self.parse_type()?);
+                        if !self.eat(TokenKind::Comma) {
+                            break;
+                        }
+                    }
+                    self.expect(TokenKind::Gt)?;
+                    Ok(Type::Generic(rakit_ir_ast::GenericType {
+                        name,
+                        params,
+                        span: self.prev_span(),
+                    }))
+                } else {
+                    Ok(Type::Named(name))
+                }
             }
             _ => Err(self.error_expected("tipe")),
         }
