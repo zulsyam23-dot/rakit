@@ -1,0 +1,1 @@
+pilihan Status { Aktif, Nonaktif, Pending(Teks) }

@@ -1,0 +1,1 @@
+komponen Tombol(teks: Teks) { tampilkan { <button>{teks}</button> } } komponen App() { tampilkan { <div><Tombol teks="Klik" /></div> } }

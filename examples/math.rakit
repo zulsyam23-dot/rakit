@@ -1,0 +1,1 @@
+fungsi kali(a: Angka, b: Angka) -> Angka { berhenti a * b }

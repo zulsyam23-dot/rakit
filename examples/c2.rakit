@@ -1,0 +1,1 @@
+komponen Card(judul: Teks, isi: Teks) { tampilkan { <div><h3>{judul}</h3><p>{isi}</p></div> } }

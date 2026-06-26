@@ -1,0 +1,1 @@
+fungsi formatHarga(nilai: Angka) -> Teks { berhenti "Rp {nilai}" }

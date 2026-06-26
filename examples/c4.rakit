@@ -1,0 +1,1 @@
+struk User { nama: Teks, umur: Angka }

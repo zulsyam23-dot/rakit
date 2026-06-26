@@ -1,0 +1,1 @@
+struk Produk { nama: Teks, harga: Angka } komponen Kartu(nama: Teks, harga: Teks) { tampilkan { <div><h3>{nama}</h3><p>{harga}</p></div> } } komponen App() { tampilkan { <div><Kartu nama="Laptop" harga="12jt" /><Kartu nama="HP" harga="5jt" /></div> } }

@@ -1,0 +1,1 @@
+fungsi cek(nilai: Angka) -> Teks { jika (nilai > 10.0) { berhenti "Besar" } lain { berhenti "Kecil" } }

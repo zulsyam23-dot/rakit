@@ -1,0 +1,1 @@
+impor "math" { kali } impor "utils" { formatHarga } fungsi main() -> I32 { konstan x: Angka = 5.0 konstan y: Angka = 3.0 konstan hasil = kali(x, y) cetak("Hasil") 0 }
