@@ -1,0 +1,10 @@
+# Build artifacts
+.rakit-build/
+dist/
+src/.rakit-build/
+src/dist/
+
+# Generated WASM/JS
+*.wasm
+*.js
+*.d.ts
