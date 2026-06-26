@@ -1246,7 +1246,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-backend-gtk4"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "gtk4",
  "rakit-runtime",
@@ -1256,7 +1256,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-backend-web"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "js-sys",
  "rakit-runtime",
@@ -1268,7 +1268,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-backend-win32"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-runtime",
  "rakit-ui",
@@ -1278,7 +1278,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-bridge"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "brak-codegen-c",
  "brak-codegen-obj",
@@ -1304,21 +1304,21 @@ dependencies = [
 
 [[package]]
 name = "rakit-codegen"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-bridge",
 ]
 
 [[package]]
 name = "rakit-core"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "rakit-doc"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-core",
  "rakit-ir-hir",
@@ -1328,11 +1328,11 @@ dependencies = [
 
 [[package]]
 name = "rakit-fmt"
-version = "0.1.0"
+version = "1.0.5"
 
 [[package]]
 name = "rakit-frontend"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-core",
  "rakit-ir-ast",
@@ -1340,7 +1340,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-ir-ast"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-core",
  "serde",
@@ -1348,7 +1348,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-ir-hir"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-core",
  "rakit-ir-ast",
@@ -1357,7 +1357,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-lsp"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-core",
  "serde",
@@ -1366,7 +1366,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-opt"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-core",
  "rakit-ir-hir",
@@ -1376,7 +1376,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-pm"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-core",
  "rakit-ir-hir",
@@ -1386,7 +1386,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-polyglot"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-core",
  "rakit-ir-hir",
@@ -1396,15 +1396,15 @@ dependencies = [
 
 [[package]]
 name = "rakit-runtime"
-version = "0.1.0"
+version = "1.0.5"
 
 [[package]]
 name = "rakit-test"
-version = "0.1.0"
+version = "1.0.5"
 
 [[package]]
 name = "rakit-tool"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "clap",
  "notify",
@@ -1429,7 +1429,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-ui"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-runtime",
  "rakit-vdom",
@@ -1437,7 +1437,7 @@ dependencies = [
 
 [[package]]
 name = "rakit-vdom"
-version = "0.1.0"
+version = "1.0.5"
 dependencies = [
  "rakit-runtime",
 ]

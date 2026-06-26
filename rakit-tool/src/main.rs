@@ -234,7 +234,7 @@ fn run_package(cmd: &PackageCommand) -> Result<(), String> {
             let manifest = rakit_pm::RakitManifest {
                 package: rakit_pm::PackageMeta {
                     name: "app".into(),
-                    version: "1.0.0".into(),
+                    version: "1.0.5".into(),
                     description: "Aplikasi Rakit".into(),
                     authors: vec!["User".into()],
                     license: "MIT".into(),
@@ -267,7 +267,7 @@ fn run_package(cmd: &PackageCommand) -> Result<(), String> {
         PackageCommand::Info { package } => {
             println!("Informasi package: {}", package);
             println!("  Registry: https://registry.rakit.dev");
-            println!("  Versi tersedia: 1.0.0, 0.9.0");
+            println!("  Versi tersedia: 1.0.5, 1.0.4, 1.0.0");
             Ok(())
         }
         PackageCommand::Init => {

@@ -1,0 +1,42 @@
+impor "komponen/Header" { Header }
+impor "komponen/Kartu" { Kartu }
+impor "komponen/Tombol" { Tombol }
+impor "komponen/Daftar" { Daftar }
+impor "komponen/Footer" { Footer }
+
+komponen App() {
+    tampilkan {
+        <div className="app">
+            <Header judul="Rakit Komprehensif" subjudul="Uji Coba Semua Kemampuan Kompleks" />
+
+            <main className="konten">
+                <section className="section">
+                    <h2>Komponen Dasar</h2>
+                    <p>Tombol dengan berbagai warna</p>
+                    <div className="tombol-row">
+                        <Tombol teks="Simpan" warna="#22c55e" />
+                        <Tombol teks="Hapus" warna="#ef4444" />
+                        <Tombol teks="Edit" warna="#3b82f6" />
+                    </div>
+                </section>
+
+                <section className="section">
+                    <h2>Kartu Informasi</h2>
+                    <div className="kartu-grid">
+                        <Kartu judul="Fungsi" isi="Dukungan fungsi rekursif, arrow function, parameter bertipe" />
+                        <Kartu judul="Data" isi="Struct, enum, pattern matching, type alias" />
+                        <Kartu judul="Kontrol" isi="if/else, while, match, try/catch, for" />
+                        <Kartu judul="Hooks" isi="useState, useEffect, useMemo, useRef, useReducer" />
+                    </div>
+                </section>
+
+                <section className="section">
+                    <h2>Daftar</h2>
+                    <Daftar />
+                </section>
+            </main>
+
+            <Footer />
+        </div>
+    }
+}

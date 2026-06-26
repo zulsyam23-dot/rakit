@@ -1,0 +1,87 @@
+struk HasilHitung {
+    ganjil: Angka,
+    genap: Angka,
+}
+
+fungsi hitungTotal() -> Angka {
+    ubah total: Angka = 0.0
+    ubah i: Angka = 1.0
+    ulang i <= 10.0 {
+        total = total + i
+        i = i + 1.0
+    }
+    berhenti total
+}
+
+fungsi cetakBilanganGenap(angka: [Angka]) -> String {
+    ubah hasil: String = ""
+    ubah i: Angka = 1.0
+    ulang i <= 10.0 {
+        jika i % 2.0 == 0.0 {
+            hasil = hasil ++ " {i}"
+        }
+        i = i + 1.0
+    }
+    berhenti hasil
+}
+
+fungsi hitungGanjilGenap(angka: [Angka]) -> HasilHitung {
+    ubah ganjil: Angka = 0.0
+    ubah genap: Angka = 0.0
+    ubah i: Angka = 1.0
+    ulang i <= 10.0 {
+        jika i % 2.0 == 0.0 {
+            genap = genap + 1.0
+        } lain {
+            ganjil = ganjil + 1.0
+        }
+        i = i + 1.0
+    }
+    berhenti HasilHitung { ganjil: ganjil, genap: genap }
+}
+
+fungsi konversiNilai(score: Angka) -> String {
+    jika score >= 80.0 {
+        berhenti "A (Sangat Baik)"
+    } lain jika score >= 70.0 {
+        berhenti "B (Baik)"
+    } lain jika score >= 60.0 {
+        berhenti "C (Cukup)"
+    } lain {
+        berhenti "D (Kurang)"
+    }
+}
+
+fungsi cobaBagi(a: Angka, b: Angka) -> String {
+    coba {
+        ubah hasil: Angka = a / b
+        berhenti "{a} / {b} = {hasil}"
+    } tangkap (e) {
+        berhenti "Error: pembagian dengan nol"
+    }
+}
+
+fungsi jumlahkanArray(angka: [Angka]) -> Angka {
+    ubah total: Angka = 0.0
+    ubah i: Angka = 1.0
+    ulang i <= 5.0 {
+        total = total + i
+        i = i + 1.0
+    }
+    berhenti total
+}
+
+fungsi hitungFibonacciLoop(n: Angka) -> String {
+    ubah hasil: String = ""
+    ubah a: Angka = 0.0
+    ubah b: Angka = 1.0
+    ubah i: Angka = 1.0
+    ulang i <= n {
+        hasil = hasil ++ " {a}"
+        ubah temp: Angka = a + b
+        a = b
+        b = temp
+        i = i + 1.0
+    }
+    berhenti hasil
+}

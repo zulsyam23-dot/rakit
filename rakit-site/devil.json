@@ -1,8 +1,9 @@
 {
   "package": {
     "name": "rakit-site",
-    "version": "1.0.0",
-    "description": "Situs profil Rakit, Brak, dan Devil"
+    "version": "1.0.5",
+    "description": "Situs profil Rakit v1.0.5, Brak, dan Devil",
+    "rakit": ">=1.0.5"
   },
   "targets": {
     "web": {
@@ -12,7 +13,8 @@
   },
   "scripts": {
     "dev": "rakit dev main.rakit --port 8080",
-    "build": "rakit build main.rakit --target web",
+    "test": "rakit test",
+    "build": "rakit build main.rakit --target wasm",
     "start": "rakit run main.rakit"
   }
 }

@@ -1,0 +1,77 @@
+struk Pengguna {
+    nama: String,
+    umur: Angka,
+    status: Status,
+}
+
+struk Admin {
+    nama: String,
+    role: String,
+}
+
+pilihan Status {
+    Aktif,
+    Nonaktif(String),
+    Tertunda,
+}
+
+pilihan Warna {
+    Merah,
+    Hijau,
+    Biru,
+    Kuning,
+    Hitam,
+}
+
+pilihan Bentuk {
+    Lingkaran(Angka),
+    Persegi(Angka),
+    Segitiga(Angka, Angka),
+}
+
+tipe UserId = I32
+tipe Koordinat = { x: Angka, y: Angka }
+
+fungsi buatPengguna(nama: String, umur: Angka, status: Status) -> Pengguna {
+    berhenti Pengguna { nama: nama, umur: umur, status: status }
+}
+
+fungsi buatAdmin(nama: String) -> Admin {
+    berhenti Admin { nama: nama, role: "admin" }
+}
+
+fungsi hitungLuasLingkaran(r: Angka) -> Angka {
+    berhenti 3.14159 * r * r
+}
+
+fungsi hitungLuasPersegi(s: Angka) -> Angka {
+    berhenti s * s
+}
+
+fungsi hitungLuasSegitiga(a: Angka, t: Angka) -> Angka {
+    berhenti 0.5 * a * t
+}
+
+fungsi getStatusLabel(status: Status) -> String {
+    cocok status {
+        Aktif => "Akun aktif",
+        _ => "Status lain",
+    }
+}
+
+fungsi getWarnaHex(warna: Warna) -> String {
+    cocok warna {
+        Merah => "#FF0000",
+        Hijau => "#00FF00",
+        Biru => "#0000FF",
+        _ => "#000000",
+    }
+}
+
+fungsi describeBentuk(bentuk: Bentuk) -> String {
+    cocok bentuk {
+        Lingkaran => "Lingkaran",
+        Persegi => "Persegi",
+        _ => "Bentuk lain",
+    }
+}

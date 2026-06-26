@@ -1,5 +1,51 @@
 # Changelog Rakit
 
+## v1.0.5 — 26 Juni 2026
+
+### Project Restructure
+- **Folder reorganization**: Source (.rakit) dipindah ke `src/`, build output (WASM/JS) ke `src/dist/`, index.html tetap di `src/`
+- **Build output**: `wasm-bindgen` sekarang output ke `src/dist/` bukan root project
+- **Dev server**: `project_dir` sekarang mengikuti lokasi entry file, bukan root CWD
+- **app_name**: Sekarang dideteksi dari project root (cari `devil.json`), bukan dari entry file parent
+
+### Version Consistency
+- **Semua Cargo.toml**: Rakit sub-crates dari `0.1.0` → `1.0.5`, Devil dari `1.0.4` → `1.0.5`, Devil Registry dari `0.1.0` → `1.0.5`
+- **devil.json**: Semua project manifest diperbarui ke v1.0.5
+- **MCP server**: Devil MCP server version sinkron ke v1.0.5
+
+### Bug Fixes
+- **app_name di WASM build**: Entry file di subdirektori (e.g. `src/main.rakit`) sekarang menghasilkan nama project yang benar, bukan nama direktori
+- **Devil dev server**: `build_dir` sekarang mengikuti entry path, bukan hardcoded ke `cwd/.rakit-build/`
+
+### Catatan
+- Build sukses: WASM output di `src/dist/aplikasi-ku.wasm`
+- 86 compilation warnings (cosmetic: unused variables, dead code)
+- Semua project applications diupdate: aplikasi-ku, demo-rakit, rakit-site
+
+---
+
+## v1.0.4 — 26 Juni 2026
+
+### Bug Fixes
+- **WASM codegen — enum variant patterns**: Match arms now emit qualified `EnumName::Variant(..)` instead of bare variant names, fixing `bindings_with_variant_name` error. Variants with fields use `(..)` pattern to ignore inner data.
+- **WASM codegen — Default for enums**: Enums now implement `Default` (picking first variant) so structs containing enum fields can derive `Default`.
+- **WASM codegen — I32/F64 mismatch**: Fixed type mismatch when passing numeric literal to `I32` parameter by updating test example to use `Angka` (since all Rakit numeric literals are `F64`).
+- **String interpolation desugaring**: Template strings like `"text {expr}"` are now lowered to `BinaryOp::Concat` chains at parser level, flowing through existing HIR → Brak → codegen pipeline without needing the `BrakExpr::Template` variant.
+- **String literal codegen**: `BrakExpr::String(s)` emits `"s".to_string()` so literals are `String` type, not `&str`.
+- **`cetak`/`println!` codegen**: Non-literal arguments use `println!("{}", expr)` instead of `println!(format!(…))`.
+- **JSX tag emission**: Static string tags remain raw `&str` for `VDomNode::element`; dynamic tags get `.as_str()`.
+- **Struct `Default` derive**: All user structs get `#[derive(Debug, Clone, Default)]` so `Pengguna::default()` works in runtime shims.
+- **Conditional Pengguna shim**: Hardcoded shim `Pengguna` struct is skipped when user defines their own `Pengguna`.
+- **Try/catch codegen**: Now emits `match catch_unwind { Ok(val) => val, Err(e) => { … } }` that propagates the closure return value and includes the catch block body.
+- **Array reuse**: Fixed use-after-move error when passing array to multiple functions by using `.clone()` (`.salin()`) in test example.
+
+### Test Results
+- ✅ `examples/komprehensif/` — 37 Brak items, full WASM compilation succeeds
+- ✅ Zero compilation errors (136 warnings are cosmetic: dead_code, unused_imports, unnecessary parens)
+- ✅ WASM output: `.wasm` + JS glue generated
+
+---
+
 ## v1.0.3 — 26 Juni 2026
 
 ### Bug Fixes

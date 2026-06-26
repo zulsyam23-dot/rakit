@@ -1,5 +1,7 @@
 use rakit_bridge::brak_types::*;
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 pub struct WasmCodegen {
     component_names: Vec<String>,
@@ -7,6 +9,8 @@ pub struct WasmCodegen {
     imported_components: Vec<String>,
     extracted_props: Vec<String>,
     struct_defs: HashMap<String, BrakStructDef>,
+    enum_defs: HashMap<String, BrakEnumDef>,
+    map_dynamic_items: RefCell<HashSet<String>>,
 }
 
 impl WasmCodegen {
@@ -17,6 +21,8 @@ impl WasmCodegen {
             imported_components: Vec::new(),
             extracted_props: Vec::new(),
             struct_defs: HashMap::new(),
+            enum_defs: HashMap::new(),
+            map_dynamic_items: RefCell::new(HashSet::new()),
         }
     }
 
@@ -24,6 +30,19 @@ impl WasmCodegen {
         self.app_name = app_name.to_string();
         let mut code = String::new();
 
+        // First pass: scan user-defined structs and enums so we can check for conflicts with shims
+        for item in &program.items {
+            if let BrakItem::Struct(s) = item {
+                self.struct_defs.insert(s.name.clone(), s.clone());
+            }
+            if let BrakItem::Enum(e) = item {
+                self.enum_defs.insert(e.name.clone(), e.clone());
+            }
+        }
+
+        let has_user_pengguna = self.struct_defs.contains_key("Pengguna");
+
+        // Emit imports
         code.push_str("use rakit_vdom::node::{VDomNode, AttrValue, ElementNode, ComponentNode, FragmentNode};\n");
         code.push_str("use rakit_vdom::h::{h, text, fragment};\n");
         code.push_str("use rakit_runtime::event::{EventType, EventData, register_global_handler};\n");
@@ -41,7 +60,6 @@ impl WasmCodegen {
         code.push_str("fn debug_fn() -> String { \"<fn>\".to_string() }\n");
         code.push_str("fn rakit_boolify(v: &str) -> bool { !v.is_empty() && v != \"false\" && v != \"0\" }\n");
         code.push_str("fn rakit_empty_vec_str() -> Vec<String> { vec![] }\n");
-
 
         code.push_str("fn use_context<T: Default>() -> T { T::default() }\n");
         code.push_str("fn ingat<T>(f: impl Fn() -> T, _deps: Vec<AttrValue>) -> T { f() }\n");
@@ -66,12 +84,13 @@ impl WasmCodegen {
         code.push_str("struct TimerInstance;\n");
         code.push_str("impl TimerInstance { fn berhenti(&self) {} }\n");
         code.push_str("fn rakit_nullish<T: Default + PartialEq>(v: T, default: T) -> T { if v != T::default() { v } else { default } }\n");
-        code.push_str("fn rakit_nullish_str(v: String, default: &str) -> String { if !v.is_empty() { v } else { default.to_string() } }\n");
+        code.push_str("fn rakit_nullish_str(v: String, default: String) -> String { if !v.is_empty() { v } else { default } }\n");
         code.push_str("fn rakit_nullish_bool(v: &str, default: bool) -> bool { v.parse::<bool>().unwrap_or(default) }\n");
         code.push_str("fn rakit_nullish_num(v: &str, default: f64) -> f64 { v.parse::<f64>().unwrap_or(default) }\n");
         code.push_str("fn rakit_to_string(v: &dyn std::fmt::Debug) -> String { format!(\"{:?}\", v) }\n");
         code.push_str("fn rakit_as_node(v: &str) -> VDomNode { VDomNode::text(v) }\n");
         code.push_str("fn rakit_is_truthy(v: &str) -> bool { !v.is_empty() && v != \"false\" && v != \"0\" }\n");
+code.push_str("fn rakit_truthy<T: Default + PartialEq>(v: &T) -> bool { *v != T::default() }\n");
         code.push_str("fn gunakan_fetch(_url: &str) -> FetchState { FetchState::default() }\n");
         code.push_str("#[derive(Default)]\n");
         code.push_str("struct FetchState { data: String, muat: bool, muat_ulang: bool, error: Option<String> }\n");
@@ -83,9 +102,11 @@ impl WasmCodegen {
         code.push_str("impl Default for TemaKonteks { fn default() -> Self { Self { tema: Tema::default(), ganti_tema: Box::new(|| {}), atur_warna_primer: Box::new(|_| {}) } } }\n");
         code.push_str("struct Sesi { kedaluwarsa: f64, pengguna: HashMap<String, AttrValue>, refresh_token: String, token: String }\n");
         code.push_str("impl Default for Sesi { fn default() -> Self { Self { kedaluwarsa: 0.0, pengguna: HashMap::new(), refresh_token: String::new(), token: String::new() } } }\n");
-        code.push_str("struct Pengguna { nama: String, peran: String }\n");
-        code.push_str("impl Default for Pengguna { fn default() -> Self { Self { nama: String::new(), peran: String::new() } } }\n");
-        code.push_str("impl Pengguna { fn is_empty(&self) -> bool { self.nama.is_empty() } }\n");
+        if !has_user_pengguna {
+            code.push_str("struct Pengguna { nama: String, peran: String }\n");
+            code.push_str("impl Default for Pengguna { fn default() -> Self { Self { nama: String::new(), peran: String::new() } } }\n");
+            code.push_str("impl Pengguna { fn is_empty(&self) -> bool { self.nama.is_empty() } }\n");
+        }
         code.push_str("struct Tema { mode: String, warna_primer: String }\n");
         code.push_str("impl Default for Tema { fn default() -> Self { Self { mode: String::new(), warna_primer: String::new() } } }\n");
         code.push_str("struct State { pengguna: HashMap<String, AttrValue>, muat: bool, error: Option<String>, sesi: HashMap<String, AttrValue> }\n");
@@ -94,12 +115,6 @@ impl WasmCodegen {
         code.push_str("type Array<T> = Vec<T>;\n");
         code.push_str("// --- End runtime shims ---\n");
         code.push_str("\n");
-
-        for item in &program.items {
-            if let BrakItem::Struct(s) = item {
-                self.struct_defs.insert(s.name.clone(), s.clone());
-            }
-        }
 
         for item in &program.items {
             match item {
@@ -246,9 +261,17 @@ js-sys = "0.3"
                         state_snake, init_str
                     ));
                     let setter_ty = if matches!(initial.as_ref(), BrakExpr::Object(_)) {
-                        "val: HashMap<String, AttrValue>"
+                        "val: HashMap<String, AttrValue>".to_string()
+                    } else if matches!(initial.as_ref(), BrakExpr::Bool(_)) {
+                        "val: bool".to_string()
+                    } else if matches!(initial.as_ref(), BrakExpr::String(_)) {
+                        "val: String".to_string()
+                    } else if matches!(initial.as_ref(), BrakExpr::Number(_)) {
+                        "val: f64".to_string()
+                    } else if matches!(initial.as_ref(), BrakExpr::Array(_)) {
+                        "val: Vec<AttrValue>".to_string()
                     } else {
-                        "val: AttrValue"
+                        "val: AttrValue".to_string()
                     };
                     code.push_str(&format!(
                         "    let {} = |{}| {{ /* TODO: re-render */ }};\n",
@@ -317,19 +340,53 @@ js-sys = "0.3"
                     "    let {}: VDomNode = props.get(\"children\").cloned().and_then(|v| match v {{ AttrValue::String(s) => Some(VDomNode::text(&s)), _ => None }}).unwrap_or(VDomNode::empty());\n",
                     snake_name
                 ));
+            } else if matches!(ty, BrakTy::Fn(..)) {
+                // Event handler / fn props are not serializable through AttrValue
+                // Generate a no-op default closure instead
+                let default_fn = match ty {
+                    BrakTy::Fn(params, ret) => {
+                        let params_strs: Vec<String> = params.iter().enumerate()
+                            .map(|(i, p)| format!("_{}: {}", i, self.gen_ty(p))).collect();
+                        let ret_str = self.gen_ty(ret);
+                        let body = match ret_str.as_str() {
+                            "()" => "{}".to_string(),
+                            "String" => "{ String::new() }".to_string(),
+                            "bool" => "{ false }".to_string(),
+                            "i32" | "i64" | "u32" | "u64" => "{ 0 }".to_string(),
+                            "f64" | "f32" => "{ 0.0 }".to_string(),
+                            _ => "{ Default::default() }".to_string(),
+                        };
+                        if params.is_empty() {
+                            format!("|| {}", body)
+                        } else {
+                            format!("|{}| {}", params_strs.join(", "), body)
+                        }
+                    }
+                    _ => "|| {}".to_string(),
+                };
+                code.push_str(&format!(
+                    "    let {} = {};\n",
+                    snake_name, default_fn
+                ));
             } else {
                 let rust_ty = self.gen_ty(ty);
-                let extract = match ty {
-                    BrakTy::Bool => "props.get(\"{name}\").and_then(|v| match v { AttrValue::Bool(b) => Some(*b), AttrValue::String(s) => s.parse::<bool>().ok(), _ => None }).unwrap_or(false)".to_string(),
-                    BrakTy::U8 => "props.get(\"{name}\").and_then(|v| if let AttrValue::Number(n) = v { Some(n as u8) } else { None }).unwrap_or(0u8)".to_string(),
-                    BrakTy::Int(32) => "props.get(\"{name}\").and_then(|v| if let AttrValue::Number(n) = v { Some(n as i32) } else { None }).unwrap_or(0i32)".to_string(),
-                    BrakTy::Int(64) => "props.get(\"{name}\").and_then(|v| if let AttrValue::Number(n) = v { Some(n as i64) } else { None }).unwrap_or(0i64)".to_string(),
-                    BrakTy::Float(64) => "props.get(\"{name}\").and_then(|v| if let AttrValue::Number(n) = v { Some(*n) } else { None }).unwrap_or(0.0)".to_string(),
-                    BrakTy::Any => "props.get(\"{name}\").and_then(|v| if let AttrValue::String(s) = v { Some(s.clone()) } else { None }).unwrap_or_default()".to_string(),
-                    BrakTy::Named(name) if name == "ReactNode" || name == "Node" => "props.get(\"children\").cloned().and_then(|v| match v { AttrValue::String(s) => Some(VDomNode::text(&s)), _ => Some(VDomNode::empty()) }).unwrap_or(VDomNode::empty())".to_string(),
-                    BrakTy::Named(name) if name == "Komponen" => "Box::new(|| VDomNode::empty()) as Box<dyn Fn() -> VDomNode>".to_string(),
-                    BrakTy::Pointer(inner) if matches!(inner.as_ref(), BrakTy::Void) => "Box::new(|| VDomNode::empty()) as Box<dyn Fn() -> VDomNode>".to_string(),
-                    _ => "props.get(\"{name}\").and_then(|v| if let AttrValue::String(s) = v { Some(s.clone()) } else { None }).unwrap_or_default()".to_string(),
+                let is_array = matches!(ty, BrakTy::Array(_)) 
+                    || matches!(ty, BrakTy::Named(n) if n == "Array");
+                let extract = if is_array {
+                    "vec![]".to_string()
+                } else {
+                    match ty {
+                        BrakTy::Bool => "props.get(\"{name}\").and_then(|v| match v { AttrValue::Bool(b) => Some(*b), AttrValue::String(s) => s.parse::<bool>().ok(), _ => None }).unwrap_or(false)".to_string(),
+                        BrakTy::U8 => "props.get(\"{name}\").and_then(|v| if let AttrValue::Number(n) = v { Some(n as u8) } else { None }).unwrap_or(0u8)".to_string(),
+                        BrakTy::Int(32) => "props.get(\"{name}\").and_then(|v| if let AttrValue::Number(n) = v { Some(n as i32) } else { None }).unwrap_or(0i32)".to_string(),
+                        BrakTy::Int(64) => "props.get(\"{name}\").and_then(|v| if let AttrValue::Number(n) = v { Some(n as i64) } else { None }).unwrap_or(0i64)".to_string(),
+                        BrakTy::Float(64) => "props.get(\"{name}\").and_then(|v| if let AttrValue::Number(n) = v { Some(*n) } else { None }).unwrap_or(0.0)".to_string(),
+                        BrakTy::Any => "props.get(\"{name}\").and_then(|v| if let AttrValue::String(s) = v { Some(s.clone()) } else { None }).unwrap_or_default()".to_string(),
+                        BrakTy::Named(name) if name == "ReactNode" || name == "Node" => "props.get(\"children\").cloned().and_then(|v| match v { AttrValue::String(s) => Some(VDomNode::text(&s)), _ => Some(VDomNode::empty()) }).unwrap_or(VDomNode::empty())".to_string(),
+                        BrakTy::Named(name) if name == "Komponen" => "Box::new(|| VDomNode::empty()) as Box<dyn Fn() -> VDomNode>".to_string(),
+                        BrakTy::Pointer(inner) if matches!(inner.as_ref(), BrakTy::Void) => "Box::new(|| VDomNode::empty()) as Box<dyn Fn() -> VDomNode>".to_string(),
+                        _ => "props.get(\"{name}\").and_then(|v| if let AttrValue::String(s) = v { Some(s.clone()) } else { None }).unwrap_or_default()".to_string(),
+                    }
                 };
                 let extract = extract.replace("{name}", name);
                 code.push_str(&format!(
@@ -483,7 +540,7 @@ js-sys = "0.3"
 
     fn gen_struct(&self, s: &BrakStructDef) -> String {
         let rust_name = to_pascal_case(&s.name);
-        let mut code = format!("#[derive(Debug, Clone)]\npub struct {} {{\n", rust_name);
+        let mut code = format!("#[derive(Debug, Clone, Default)]\npub struct {} {{\n", rust_name);
         for field in &s.fields {
             let field_name = to_snake_case(&field.name);
             code.push_str(&format!(
@@ -509,6 +566,23 @@ js-sys = "0.3"
             }
         }
         code.push_str("}\n");
+        if let Some(first) = e.variants.first() {
+            let first_name = to_pascal_case(&first.name);
+            if first.fields.is_empty() {
+                code.push_str(&format!("impl Default for {} {{ fn default() -> Self {{ Self::{} }} }}\n", rust_name, first_name));
+            } else {
+                let defaults: Vec<String> = first.fields.iter().map(|t| {
+                    match self.gen_ty(t).as_str() {
+                        "f64" => "0.0".to_string(),
+                        "i32" => "0".to_string(),
+                        "String" => "String::new()".to_string(),
+                        "bool" => "false".to_string(),
+                        _ => "Default::default()".to_string(),
+                    }
+                }).collect();
+                code.push_str(&format!("impl Default for {} {{ fn default() -> Self {{ Self::{}({}) }} }}\n", rust_name, first_name, defaults.join(", ")));
+            }
+        }
         code
     }
 
@@ -533,6 +607,16 @@ js-sys = "0.3"
         match stmt {
             BrakStmt::Let(let_stmt) => {
                 let mutability = if let_stmt.mutable { "mut " } else { "" };
+                // Skip destructuring `props = props.props` — gen_component_body_props handles it
+                if let_stmt.name == "props" && let_stmt.ty.as_ref().map_or(false, |t| matches!(t, BrakTy::Struct(_))) {
+                    if let BrakExpr::Member(obj, _) = &let_stmt.value {
+                        if let BrakExpr::Ident(name) = obj.as_ref() {
+                            if name == "props" {
+                                return format!("let {} = HashMap::<String, AttrValue>::new();", to_snake_case(&let_stmt.name));
+                            }
+                        }
+                    }
+                }
                 let ty = let_stmt
                     .ty
                     .as_ref()
@@ -609,9 +693,17 @@ js-sys = "0.3"
             }
             BrakStmt::Try(t) => {
                 let ind = "    ".repeat(indent as usize);
+                let catch_ind = "    ".repeat((indent + 1) as usize);
+                let catch_body = self.gen_block(&t.catch_block, indent + 2);
                 format!(
-                    "{{ let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{\n{}{}}})); }}\n",
+                    "match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{\n{}{}}})) {{\n{}Ok(val) => val,\n{}Err({}) => {{\n{}{}}}\n{}}}\n",
                     self.gen_block(&t.try_block, indent + 1),
+                    ind,
+                    catch_ind,
+                    catch_ind,
+                    to_snake_case(&t.catch_var),
+                    catch_body,
+                    ind,
                     ind
                 )
             }
@@ -621,19 +713,42 @@ js-sys = "0.3"
         }
     }
 
+    fn qualify_enum_variant(&self, name: &str) -> Option<(String, bool)> {
+        for (enum_name, enum_def) in &self.enum_defs {
+            for variant in &enum_def.variants {
+                if variant.name == name {
+                    return Some((enum_name.clone(), !variant.fields.is_empty()));
+                }
+            }
+        }
+        None
+    }
+
     fn gen_pattern(&self, pattern: &BrakPattern) -> String {
         match pattern {
             BrakPattern::Wildcard => "_".to_string(),
             BrakPattern::Literal(lit) => self.gen_literal(lit),
-            BrakPattern::Ident(name) => name.clone(),
+            BrakPattern::Ident(name) => {
+                if let Some((enum_name, has_fields)) = self.qualify_enum_variant(name) {
+                    let qualified = format!("{}::{}", to_pascal_case(&enum_name), to_pascal_case(name));
+                    if has_fields {
+                        format!("{}(..)", qualified)
+                    } else {
+                        qualified
+                    }
+                } else {
+                    name.clone()
+                }
+            }
         }
     }
 
     fn gen_literal(&self, lit: &BrakLiteral) -> String {
         match lit {
             BrakLiteral::Number(n) => {
+                // Always generate f64 format (Rakit Angka maps to f64)
                 if *n == (*n as i64) as f64 {
-                    format!("{}", *n as i64)
+                    format!("{}.0", *n as i64)
                 } else {
                     format!("{}", n)
                 }
@@ -647,8 +762,13 @@ js-sys = "0.3"
     fn gen_if(&self, if_stmt: &BrakIf, indent: u32) -> String {
         let ind = "    ".repeat(indent as usize);
         let cond_str = self.gen_expr(&if_stmt.condition, indent);
-        let wrapped_cond = if cond_str.contains("props.get(") && !cond_str.contains("==") && !cond_str.contains("!=") && !cond_str.contains("<") && !cond_str.contains(">") && !cond_str.contains("&&") && !cond_str.contains("||") {
-            format!("rakit_is_truthy(&{})", cond_str)
+        let is_comparison = cond_str.contains("==") || cond_str.contains("!=") || cond_str.contains("<") || cond_str.contains(">") || cond_str.contains("&&") || cond_str.contains("||");
+        let is_literal = cond_str == "true" || cond_str == "false";
+        let needs_truthy = !is_comparison && !is_literal
+            && (cond_str.contains("props.get(")
+                || cond_str.starts_with(|c: char| c.is_ascii_lowercase()));
+        let wrapped_cond = if needs_truthy {
+            format!("rakit_truthy(&{})", cond_str)
         } else {
             cond_str
         };
@@ -673,12 +793,6 @@ js-sys = "0.3"
                 else_content,
                 ind
             ));
-        } else {
-            let else_ind = "    ".repeat((indent + 1) as usize);
-            code.push_str(&format!(
-                " else {{\n{}Default::default()\n{}}}",
-                else_ind, ind
-            ));
         }
 
         code
@@ -688,12 +802,12 @@ js-sys = "0.3"
         match expr {
             BrakExpr::Number(n) => {
                 if *n == (*n as i64) as f64 {
-                    format!("{}", *n as i64)
+                    format!("{}.0", *n as i64)
                 } else {
                     format!("{}", n)
                 }
             }
-            BrakExpr::String(s) => format!("\"{}\"", escape_string(s)),
+            BrakExpr::String(s) => format!("\"{}\".to_string()", escape_string(s)),
             BrakExpr::Bool(b) => b.to_string(),
             BrakExpr::Null => "VDomNode::empty()".to_string(),
             BrakExpr::Ident(name) => {
@@ -764,16 +878,18 @@ js-sys = "0.3"
                             )
                         }
                         BrakExpr::Bool(b) => {
+                            // After prop extraction, values are already typed bools
                             format!(
-                                "rakit_nullish_bool(&{}, {})",
+                                "({} || {})",
                                 self.gen_expr(lhs, indent),
                                 b
                             )
                         }
                         BrakExpr::Number(n) => {
-                            let n_str = if *n == (*n as i64) as f64 { format!("{}", *n as i64) } else { format!("{}", n) };
+                            // After prop extraction, values are already typed f64
+                            let n_str = if *n == (*n as i64) as f64 { format!("{}.0", *n as i64) } else { format!("{}", n) };
                             format!(
-                                "rakit_nullish_num(&{}, {})",
+                                "({}).to_string().parse::<f64>().unwrap_or({})",
                                 self.gen_expr(lhs, indent),
                                 n_str
                             )
@@ -857,8 +973,47 @@ js-sys = "0.3"
                 } else {
                     callee_raw
                 };
-                let args_strs: Vec<String> =
-                    args.iter().map(|a| self.gen_expr(a, indent)).collect();
+                let args_strs: Vec<String> = if callee_str.ends_with(".into_iter().map") && !args.is_empty() {
+                    if let BrakExpr::Block(block) = &args[0] {
+                        let mut closure_params = Vec::new();
+                        let mut remaining_stmts = Vec::new();
+                        for stmt in &block.stmts {
+                            if let BrakStmt::Let(let_stmt) = stmt {
+                                if matches!(&let_stmt.value, BrakExpr::Null) {
+                                    closure_params.push(to_snake_case(&let_stmt.name));
+                                    continue;
+                                }
+                            }
+                            remaining_stmts.push(stmt.clone());
+                        }
+                        if !closure_params.is_empty() {
+                            // Mark map params as dynamic items so member access uses .get()
+                            let mut dyn_items = self.map_dynamic_items.borrow_mut();
+                            for p in &closure_params {
+                                dyn_items.insert(p.clone());
+                            }
+                            drop(dyn_items);
+                            let body_block = BrakBlock { stmts: remaining_stmts };
+                            let body_str = self.gen_block(&body_block, indent + 1);
+                            let ind = "    ".repeat(indent as usize);
+                            let mut dyn_items = self.map_dynamic_items.borrow_mut();
+                            for p in &closure_params {
+                                dyn_items.remove(p);
+                            }
+                            // Shadow AttrValue item with HashMap for .get() field access
+                            let shadow_lets: String = closure_params.iter()
+                                .map(|p| format!("{}let {}: HashMap<String, AttrValue> = HashMap::new();\n", ind, p))
+                                .collect();
+                            vec![format!("|{}| {{\n{}{}{}}}", closure_params.join(", "), shadow_lets, body_str, ind)]
+                        } else {
+                            args.iter().map(|a| self.gen_expr(a, indent)).collect()
+                        }
+                    } else {
+                        args.iter().map(|a| self.gen_expr(a, indent)).collect()
+                    }
+                } else {
+                    args.iter().map(|a| self.gen_expr(a, indent)).collect()
+                };
 
                 if callee_str == "h" && args.len() >= 2 {
                     self.gen_jsx_call(&args, indent)
@@ -877,7 +1032,12 @@ js-sys = "0.3"
                         let placeholders: Vec<String> = args_strs[1..].iter().map(|_| "{}".to_string()).collect();
                         format!("println!(\"{} {}\", {})", fmt, placeholders.join(" "), args_strs[1..].join(", "))
                     } else {
-                        format!("println!({})", args_strs.join(", "))
+                        let arg = &args_strs[0];
+                        if arg.starts_with('"') && arg.ends_with('"') && !arg[1..arg.len()-1].contains('\"') {
+                            format!("println!({})", arg)
+                        } else {
+                            format!("println!(\"{{}}\", {})", arg)
+                        }
                     }
                 } else if callee_str == "stringifyJSON" {
                     if args_strs.is_empty() { "String::new()".to_string() } else { format!("format!(\"{:?}\", {})", args_strs[0], args_strs[0]) }
@@ -920,7 +1080,12 @@ js-sys = "0.3"
                         let rest = args_strs[1..].join(", ");
                         format!("{}({}, {})", callee_str, cb, rest)
                     } else {
-                        format!("{}({})", callee_str, args_strs.join(", "))
+                        let raw_call = format!("{}({})", callee_str, args_strs.join(", "));
+                        if callee_str.ends_with(".map") {
+                            format!("VDomNode::fragment({}.collect::<Vec<VDomNode>>())", raw_call)
+                        } else {
+                            raw_call
+                        }
                     };
                     if callee_str.starts_with("__state") || callee_str.starts_with("__set_state") || callee_str.starts_with("__memo") {
                         call_str
@@ -948,9 +1113,16 @@ js-sys = "0.3"
                         }
                         return format!("props.get(\"{}\").and_then(|v| if let AttrValue::String(s) = v {{ Some(s.clone()) }} else {{ None }}).unwrap_or_default()", field);
                     }
+                    // Enum variant access: Status.Aktif → Status::Aktif
+                    if let Some(enum_def) = self.enum_defs.get(name) {
+                        if enum_def.variants.iter().any(|v| v.name == *field) {
+                            return format!("{}::{}", to_pascal_case(name), to_pascal_case(field));
+                        }
+                    }
                 }
                 let field_map: HashMap<&str, &str> = [
-                    ("panjang", "len()"),
+                    ("panjang", "len() as f64"),
+                    ("length", "len() as f64"),
                     ("petakan", "into_iter().map"),
                     ("filter", "into_iter().filter"),
                     ("cari", "into_iter().find"),
@@ -990,7 +1162,15 @@ js-sys = "0.3"
                 } else if field == "includes" || field == "mengandung" {
                     format!("{}.contains", obj_str)
                 } else {
-                    format!("{}.{}", obj_str, field_snake)
+                    if let BrakExpr::Ident(name) = obj.as_ref() {
+                        if self.map_dynamic_items.borrow().contains(name) {
+                            format!("{}.get(\"{}\").and_then(|v| if let AttrValue::String(s) = v {{ Some(s.clone()) }} else {{ None }}).unwrap_or_default()", obj_str, field_snake)
+                        } else {
+                            format!("{}.{}", obj_str, field_snake)
+                        }
+                    } else {
+                        format!("{}.{}", obj_str, field_snake)
+                    }
                 }
             }
             BrakExpr::Index(obj, index) => {
@@ -1003,36 +1183,65 @@ js-sys = "0.3"
             BrakExpr::Array(items) => {
                 let items_strs: Vec<String> =
                     items.iter().map(|i| self.gen_expr(i, indent)).collect();
-                format!("vec![{}]", items_strs.join(", "))
+                if items_strs.is_empty() {
+                    "Vec::<AttrValue>::new()".to_string()
+                } else {
+                    format!("vec![{}]", items_strs.join(", "))
+                }
             }
-            BrakExpr::StructInit(_name, _fields) => {
-                let fields_strs: Vec<String> = _fields
-                    .iter()
-                    .map(|(k, v)| {
-                        format!(
-                            "(\"{}\", {})",
-                            k,
-                            self.gen_attr_value(v, indent)
-                        )
-                    })
-                    .collect();
-                format!("vec![{}]", fields_strs.join(", "))
+            BrakExpr::StructInit(name, fields) => {
+                if let Some(struct_def) = self.struct_defs.get(name) {
+                    let field_strs: Vec<String> = fields
+                        .iter()
+                        .map(|(k, v)| {
+                            let snake = to_snake_case(k);
+                            let val_str = self.gen_expr(v, indent);
+                            format!("{}: {}", snake, val_str)
+                        })
+                        .collect();
+                    let struct_name = to_pascal_case(name);
+                    if fields.is_empty() {
+                        format!("{} {{}}", struct_name)
+                    } else {
+                        format!("{} {{ {} }}", struct_name, field_strs.join(", "))
+                    }
+                } else {
+                    let fields_strs: Vec<String> = fields
+                        .iter()
+                        .map(|(k, v)| {
+                            format!(
+                                "(\"{}\", {})",
+                                k,
+                                self.gen_attr_value(v, indent)
+                            )
+                        })
+                        .collect();
+                    format!("vec![{}]", fields_strs.join(", "))
+                }
             }
             BrakExpr::Block(block) => {
                 let ind = "    ".repeat(indent as usize);
-                let stmts_str: Vec<String> = block.stmts.iter()
-                    .map(|s| self.gen_stmt(s, indent + 1))
-                    .collect();
                 format!(
-                    "{{\n{}\n{}}}",
-                    stmts_str.iter().map(|s| format!("{}", s)).collect::<Vec<_>>().join(";\n"),
+                    "{{\n{}{}}}",
+                    self.gen_block(block, indent + 1),
                     ind
                 )
             }
             BrakExpr::Ternary(cond, then_expr, else_expr) => {
+                let cond_str = self.gen_expr(cond, indent);
+                let is_comparison = cond_str.contains("==") || cond_str.contains("!=") || cond_str.contains("<") || cond_str.contains(">") || cond_str.contains("&&") || cond_str.contains("||");
+                let is_literal = cond_str == "true" || cond_str == "false";
+                let needs_truthy = !is_comparison && !is_literal
+                    && (cond_str.contains("props.get(")
+                        || cond_str.starts_with(|c: char| c.is_ascii_lowercase()));
+                let wrapped_cond = if needs_truthy {
+                    format!("rakit_truthy(&{})", cond_str)
+                } else {
+                    cond_str
+                };
                 format!(
                     "if {} {{ {} }} else {{ {} }}",
-                    self.gen_expr(cond, indent),
+                    wrapped_cond,
                     self.gen_expr(then_expr, indent),
                     self.gen_expr(else_expr, indent)
                 )
@@ -1047,7 +1256,7 @@ js-sys = "0.3"
             }
             BrakExpr::Object(fields) => {
                 if fields.is_empty() {
-                    "HashMap::new()".to_string()
+                    "HashMap::<String, AttrValue>::new()".to_string()
                 } else {
                     let fields_strs: Vec<String> = fields.iter()
                         .map(|(k, v)| {
@@ -1122,7 +1331,12 @@ js-sys = "0.3"
             return format!("h({})", args_strs.join(", "));
         }
 
-        let tag = self.gen_expr(&args[0], indent);
+        // Tag must be &str for VDomNode::element, so keep raw string literal if static
+        let tag = if let BrakExpr::String(s) = &args[0] {
+            format!("\"{}\"", escape_string(s))
+        } else {
+            format!("{}.as_str()", self.gen_expr(&args[0], indent))
+        };
         let attrs = &args[1];
         let children = if args.len() > 2 { &args[2] } else { &BrakExpr::Array(vec![]) };
         let has_children = match children {
@@ -1339,7 +1553,7 @@ js-sys = "0.3"
                 format!("VDomNode::text(\"{}\")", escape_string(s))
             }
             BrakExpr::Number(n) => {
-                format!("VDomNode::text(&format!(\"{}\", {}))", if *n == (*n as i64) as f64 { "{}" } else { "{}" }, n)
+                format!("VDomNode::text(&format!(\"{}\", {}))", "{}", n)
             }
             BrakExpr::Null => {
                 "VDomNode::empty()".to_string()
@@ -1380,9 +1594,20 @@ js-sys = "0.3"
                 let needs_wrap = |s: &str| !s.starts_with("VDomNode::") && !s.starts_with("rakit_") && !s.starts_with("if ") && !s.starts_with("{") && !s.starts_with("|| ") && s != "Default::default()";
                 let then_wrapped = if needs_wrap(&then_str) { format!("rakit_as_node(&{})", then_str) } else { then_str };
                 let else_wrapped = if needs_wrap(&else_str) { format!("rakit_as_node(&{})", else_str) } else { else_str };
+                let cond_str = self.gen_expr(cond, indent);
+                let is_comparison = cond_str.contains("==") || cond_str.contains("!=") || cond_str.contains("<") || cond_str.contains(">") || cond_str.contains("&&") || cond_str.contains("||");
+                let is_literal = cond_str == "true" || cond_str == "false";
+                let needs_truthy = !is_comparison && !is_literal
+                    && (cond_str.contains("props.get(")
+                        || cond_str.starts_with(|c: char| c.is_ascii_lowercase()));
+                let wrapped_cond = if needs_truthy {
+                    format!("rakit_truthy(&{})", cond_str)
+                } else {
+                    cond_str
+                };
                 format!(
                     "if {} {{ {} }} else {{ {} }}",
-                    self.gen_expr(cond, indent),
+                    wrapped_cond,
                     then_wrapped,
                     else_wrapped
                 )
@@ -1443,15 +1668,15 @@ js-sys = "0.3"
                 if fields.is_empty() {
                     "HashMap<String, AttrValue>".to_string()
                 } else {
-                    let fields_strs: Vec<String> = fields
-                        .iter()
-                        .map(|(n, t)| format!("{}: {}", to_snake_case(n), self.gen_ty(t)))
-                        .collect();
-                    format!("{{ {} }}", fields_strs.join(", "))
+                    // Inline struct types are not valid in Rust; use HashMap instead
+                    // since all component props pass through the attr system at runtime
+                    "HashMap<String, AttrValue>".to_string()
                 }
             }
             BrakTy::Enum(variants) => {
-                variants.join(" | ")
+                // Enum/union types from Rakit type aliases (e.g. "primer" | "sekunder")
+                // Use String at runtime since variants are string literals
+                "String".to_string()
             }
             BrakTy::Named(name) => {
                 match name.as_str() {
@@ -1470,7 +1695,15 @@ js-sys = "0.3"
                     "Partial" => "HashMap<String, AttrValue>".to_string(),
                     "Omit" => "HashMap<String, AttrValue>".to_string(),
                     "Array" => "Vec<AttrValue>".to_string(),
-                    _ => to_pascal_case(name),
+                    _ => {
+                        // Check if it's a known user-defined struct/enum
+                        if self.struct_defs.contains_key(name) || self.enum_defs.contains_key(name) {
+                            to_pascal_case(name)
+                        } else {
+                            // Unknown named types default to String for WASM interop
+                            "String".to_string()
+                        }
+                    }
                 }
             }
         }
@@ -1489,10 +1722,13 @@ js-sys = "0.3"
             })
             .collect();
 
-        let root = if self.component_names.is_empty() {
+        let root: &str = if self.component_names.is_empty() {
             "RootComponent"
         } else {
-            &self.component_names[0]
+            // Prefer "App" as root (the main entry point component)
+            self.component_names.iter().find(|n| *n == "App")
+                .map(|s| s.as_str())
+                .unwrap_or(&self.component_names[0])
         };
 
         let registrations = component_registrations.join("\n");
@@ -1501,7 +1737,7 @@ js-sys = "0.3"
             r#"#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn start_app() {{
-    let backend = rakit_backend_web::WebBackend::new("app");
+    let backend = rakit_backend_web::WebBackend::new("root");
     let mut engine = rakit_ui::RakitApp::new(backend, "{}");
 {}
     engine.init(&rakit_ui::AppConfig::new("{}", "com.rakit", "0.1.0")).unwrap();

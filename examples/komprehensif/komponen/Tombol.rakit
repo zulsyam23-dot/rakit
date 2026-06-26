@@ -1,0 +1,7 @@
+komponen Tombol(teks: String, warna: String) {
+    tampilkan {
+        <button className="tombol" style={"background: " ++ warna}>
+            {teks}
+        </button>
+    }
+}

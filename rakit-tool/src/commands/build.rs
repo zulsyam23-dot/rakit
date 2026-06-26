@@ -130,9 +130,9 @@ impl BuildCommand {
         // Fase 8: Codegen
         let canonical = file.canonicalize().unwrap_or_else(|_| file.to_path_buf());
         let project_dir = canonical.parent().unwrap_or(Path::new("."));
-        let app_name = project_dir
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
+        let app_name = find_project_root(&canonical)
+            .or_else(|| std::env::current_dir().ok())
+            .and_then(|root| root.file_name().map(|n| n.to_string_lossy().to_string()))
             .unwrap_or_else(|| "app".to_string());
 
         let mut codegen = rakit_codegen::WasmCodegen::new();
@@ -207,9 +207,13 @@ impl BuildCommand {
                 .map(|n| wasm_dir.join(n))
                 .find(|p| p.exists());
 
+            let output_dir = project_dir.join("dist");
+            fs::create_dir_all(&output_dir)
+                .map_err(|e| format!("Gagal buat direktori output: {}", e))?;
+
             let wasm_dest = output
                 .map(|p| p.to_path_buf())
-                .unwrap_or_else(|| project_dir.join(format!("{}.wasm", app_name)));
+                .unwrap_or_else(|| output_dir.join(format!("{}.wasm", app_name)));
 
             if let Some(src) = wasm_source {
                 fs::copy(&src, &wasm_dest)
@@ -220,14 +224,14 @@ impl BuildCommand {
                     .args(&[
                         wasm_dest.to_string_lossy().as_ref(),
                         "--out-dir",
-                        project_dir.to_string_lossy().as_ref(),
+                        output_dir.to_string_lossy().as_ref(),
                         "--target",
                         "web",
                     ])
                     .status();
                 match wb_status {
                     Ok(status) if status.success() => {
-                        println!("  JS glue: {}\\{}_bg.js", project_dir.display(), app_name);
+                        println!("  JS glue: {}\\{}_bg.js", output_dir.display(), app_name);
                     }
                     _ => {
                         println!("  wasm-bindgen tidak dijalankan. Install: cargo install wasm-bindgen-cli");
@@ -348,6 +352,19 @@ fn resolve_all_imports(hir: &mut HirProgram, entry_dir: &Path, cache: &mut HashM
     hir.items.extend(new_items);
     for &i in import_indices.iter().rev() {
         hir.items.remove(i);
+    }
+}
+
+fn find_project_root(entry: &Path) -> Option<std::path::PathBuf> {
+    let mut dir = entry.parent()?;
+    loop {
+        if dir.join("devil.json").exists() {
+            return Some(dir.to_path_buf());
+        }
+        match dir.parent() {
+            Some(p) if p != dir => dir = p,
+            _ => return None,
+        }
     }
 }
 

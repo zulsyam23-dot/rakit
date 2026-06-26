@@ -1,0 +1,8 @@
+komponen Kartu(judul: String, isi: String) {
+    tampilkan {
+        <div className="kartu">
+            <h3>{judul}</h3>
+            <p>{isi}</p>
+        </div>
+    }
+}

@@ -1,0 +1,27 @@
+komponen Kalkulator() {
+    keadaan(angka1, setAngka1) = "0"
+    keadaan(angka2, setAngka2) = "0"
+    keadaan(hasil, setHasil) = "0"
+    keadaan(operasi, setOperasi) = "+"
+
+    efek(() => {
+        cetak("Kalkulator dimount!")
+    }, [])
+
+    tampilkan {
+        <div className="kalkulator">
+            <h2>Kalkulator</h2>
+            <div className="input-group">
+                <input type="text" value={angka1} onInput={setAngka1} />
+                <span className="operator">{operasi}</span>
+                <input type="text" value={angka2} onInput={setAngka2} />
+            </div>
+            <div className="tombol-group">
+                <button onClick={setHasil}>Hitung</button>
+            </div>
+            <div className="hasil">
+                <p>Hasil: {hasil}</p>
+            </div>
+        </div>
+    }
+}

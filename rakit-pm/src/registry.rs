@@ -26,7 +26,7 @@ impl PackageRegistry {
         Ok(vec![
             PackageInfo {
                 name: "rakit/ui".into(),
-                version: "1.0.0".into(),
+                version: "1.0.5".into(),
                 description: "Komponen UI dasar Rakit".into(),
                 authors: vec!["Tim Rakit".into()],
                 license: "MIT".into(),

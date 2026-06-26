@@ -1,0 +1,7 @@
+komponen Footer() {
+    tampilkan {
+        <footer className="footer">
+            <p>Rakit Komprehensif — 2026</p>
+        </footer>
+    }
+}

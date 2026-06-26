@@ -384,7 +384,11 @@ impl<'a> Parser<'a> {
             }
             TokenKind::String => {
                 let s = Self::unescape_string(&tok.lexeme);
-                Expr::Literal(Literal::String(s))
+                if let Some(template) = self.try_parse_template(&s) {
+                    template
+                } else {
+                    Expr::Literal(Literal::String(s))
+                }
             }
             TokenKind::CharLit => {
                 let c = tok.lexeme.chars().nth(1).unwrap_or('\0');
@@ -420,6 +424,177 @@ impl<'a> Parser<'a> {
             }
         }
         out
+    }
+
+    // ── Template String (Interpolation) ──────────────────────────
+
+    fn try_parse_template(&self, s: &str) -> Option<Expr> {
+        let chars: Vec<char> = s.chars().collect();
+        let mut i = 0;
+        let mut exprs: Vec<Expr> = Vec::new();
+        let mut text_start = 0;
+        while i < chars.len() {
+            if chars[i] == '{' {
+                if i > text_start {
+                    let text: String = chars[text_start..i].iter().collect();
+                    exprs.push(Expr::Literal(Literal::String(text)));
+                }
+                i += 1;
+                let expr_start = i;
+                let mut depth = 1;
+                while i < chars.len() && depth > 0 {
+                    if chars[i] == '{' { depth += 1; }
+                    else if chars[i] == '}' { depth -= 1; }
+                    i += 1;
+                }
+                if depth == 0 && i > expr_start + 1 {
+                    let expr_str: String = chars[expr_start..i - 1].iter().collect();
+                    let expr_str = expr_str.trim();
+                    if !expr_str.is_empty() {
+                        let parsed = self.parse_tmpl_expr(expr_str)?;
+                        exprs.push(parsed);
+                    }
+                } else {
+                    return None;
+                }
+                text_start = i;
+            } else {
+                i += 1;
+            }
+        }
+        if text_start < chars.len() {
+            let text: String = chars[text_start..].iter().collect();
+            exprs.push(Expr::Literal(Literal::String(text)));
+        }
+        if exprs.is_empty() || exprs.len() == 1 && matches!(&exprs[0], Expr::Literal(Literal::String(_))) {
+            return None;
+        }
+        let mut result = exprs.into_iter();
+        let first = result.next()?;
+        Some(result.fold(first, |left, right| {
+            Expr::Binary(BinaryOp::Concat, Box::new(left), Box::new(right))
+        }))
+    }
+
+    fn parse_tmpl_expr(&self, s: &str) -> Option<Expr> {
+        let chars: Vec<char> = s.chars().collect();
+        let mut pos = 0;
+        self.parse_tmpl_concat(&chars, &mut pos)
+    }
+
+    fn parse_tmpl_concat(&self, chars: &[char], pos: &mut usize) -> Option<Expr> {
+        let left = self.parse_tmpl_postfix(chars, pos)?;
+        self.skip_tmpl_ws(chars, pos);
+        if *pos < chars.len() && chars[*pos] == '+' {
+            *pos += 1;
+            if *pos < chars.len() && chars[*pos] == '+' {
+                *pos += 1;
+            }
+            let right = self.parse_tmpl_concat(chars, pos)?;
+            Some(Expr::Binary(BinaryOp::Concat, Box::new(left), Box::new(right)))
+        } else {
+            Some(left)
+        }
+    }
+
+    fn parse_tmpl_postfix(&self, chars: &[char], pos: &mut usize) -> Option<Expr> {
+        let mut expr = self.parse_tmpl_primary(chars, pos)?;
+        loop {
+            self.skip_tmpl_ws(chars, pos);
+            if *pos >= chars.len() { break; }
+            match chars[*pos] {
+                '.' => {
+                    *pos += 1;
+                    self.skip_tmpl_ws(chars, pos);
+                    let start = *pos;
+                    while *pos < chars.len() && (chars[*pos].is_alphanumeric() || chars[*pos] == '_') {
+                        *pos += 1;
+                    }
+                    if start == *pos { return None; }
+                    let field: String = chars[start..*pos].iter().collect();
+                    expr = Expr::Member(Box::new(expr), field);
+                }
+                '(' => {
+                    *pos += 1;
+                    let mut args = Vec::new();
+                    loop {
+                        self.skip_tmpl_ws(chars, pos);
+                        if *pos >= chars.len() || chars[*pos] == ')' {
+                            *pos += 1;
+                            break;
+                        }
+                        args.push(self.parse_tmpl_concat(chars, pos)?);
+                        self.skip_tmpl_ws(chars, pos);
+                        if *pos < chars.len() && chars[*pos] == ',' {
+                            *pos += 1;
+                        }
+                    }
+                    expr = Expr::Call(Box::new(expr), args);
+                }
+                _ => break,
+            }
+        }
+        Some(expr)
+    }
+
+    fn parse_tmpl_primary(&self, chars: &[char], pos: &mut usize) -> Option<Expr> {
+        self.skip_tmpl_ws(chars, pos);
+        if *pos >= chars.len() { return None; }
+        match chars[*pos] {
+            c if c.is_ascii_digit() => {
+                let start = *pos;
+                while *pos < chars.len() && (chars[*pos].is_ascii_digit() || chars[*pos] == '.') {
+                    *pos += 1;
+                }
+                let num_str: String = chars[start..*pos].iter().collect();
+                let val: f64 = num_str.parse().ok()?;
+                Some(Expr::Literal(Literal::Number(val)))
+            }
+            '[' => {
+                *pos += 1;
+                let mut items = Vec::new();
+                loop {
+                    self.skip_tmpl_ws(chars, pos);
+                    if *pos >= chars.len() || chars[*pos] == ']' {
+                        *pos += 1;
+                        break;
+                    }
+                    items.push(self.parse_tmpl_concat(chars, pos)?);
+                    self.skip_tmpl_ws(chars, pos);
+                    if *pos < chars.len() && chars[*pos] == ',' {
+                        *pos += 1;
+                    }
+                }
+                Some(Expr::Array(items))
+            }
+            '\'' | '"' => {
+                let quote = chars[*pos];
+                *pos += 1;
+                let start = *pos;
+                while *pos < chars.len() && chars[*pos] != quote {
+                    if chars[*pos] == '\\' { *pos += 1; }
+                    *pos += 1;
+                }
+                let s: String = chars[start..*pos].iter().collect();
+                if *pos < chars.len() { *pos += 1; }
+                Some(Expr::Literal(Literal::String(s)))
+            }
+            _ => {
+                let start = *pos;
+                while *pos < chars.len() && (chars[*pos].is_alphanumeric() || chars[*pos] == '_') {
+                    *pos += 1;
+                }
+                if start == *pos { return None; }
+                let name: String = chars[start..*pos].iter().collect();
+                Some(Expr::Ident(name))
+            }
+        }
+    }
+
+    fn skip_tmpl_ws(&self, chars: &[char], pos: &mut usize) {
+        while *pos < chars.len() && chars[*pos].is_whitespace() {
+            *pos += 1;
+        }
     }
 
     // ── JSX ───────────────────────────────────────────────────────

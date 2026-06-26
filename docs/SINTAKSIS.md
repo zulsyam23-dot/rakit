@@ -37,6 +37,8 @@
 
 ## Tipe Data
 
+### Tipe Dasar
+
 | Tipe | Deskripsi |
 |------|-----------|
 | `I32` | Integer 32-bit |
@@ -44,12 +46,24 @@
 | `U32` | Unsigned 32-bit |
 | `U64` | Unsigned 64-bit |
 | `F32` | Float 32-bit |
-| `F64` | Float 64-bit |
-| `Bool` | Boolean |
-| `String` | String |
-| `Char` | Character |
-| `Void` | Unit type |
+| `F64` / `Angka` | Float 64-bit |
+| `Bool` / `BenarSalah` | Boolean |
+| `String` / `Teks` | String |
+| `Char` / `Huruf` | Character |
+| `Void` / `Kosong` | Unit type |
 | `Node` | Tipe elemen UI |
+
+### Tipe Bahasa Indonesia
+
+Rakit mendukung padanan tipe dalam Bahasa Indonesia:
+
+| Indonesia | Rust |
+|-----------|------|
+| `Angka` | `F64` |
+| `Teks` | `String` |
+| `BenarSalah` | `Bool` |
+| `Huruf` | `Char` |
+| `Kosong` | `Void` |
 
 ## Fungsi
 
@@ -114,10 +128,5 @@ pilih Status {
     Aktif,
     Nonaktif(String),
     Tertunda,
-}
-
-struktur User {
-    nama: String,
-    umur: I32,
 }
 ```

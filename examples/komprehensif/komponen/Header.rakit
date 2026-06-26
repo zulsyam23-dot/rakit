@@ -1,0 +1,8 @@
+komponen Header(judul: String, subjudul: String) {
+    tampilkan {
+        <header className="header">
+            <h1>{judul}</h1>
+            <p>{subjudul}</p>
+        </header>
+    }
+}

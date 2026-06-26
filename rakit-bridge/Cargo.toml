@@ -1,6 +1,6 @@
 [package]
 name = "rakit-bridge"
-version = "0.1.0"
+version = "1.0.5"
 edition = "2021"
 description = "Rakit → Brak IR bridge — uses Brak as compilation engine"
 

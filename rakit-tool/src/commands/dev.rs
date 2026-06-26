@@ -1,6 +1,7 @@
 use crate::commands::build::BuildCommand;
 use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::Path;
+use std::path::PathBuf;
 use std::sync::mpsc::{self, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -203,9 +204,9 @@ pub fn run_dev_server(file: &Path, port: Option<u16>) -> Result<(), String> {
         file.parent().unwrap_or(Path::new(".")).to_path_buf()
     };
 
-    let app_name = project_dir
-        .file_name()
-        .map(|s| s.to_string_lossy().to_string())
+    let app_name = find_project_root_for_dev(&file)
+        .or_else(|| std::env::current_dir().ok())
+        .and_then(|root| root.file_name().map(|s| s.to_string_lossy().to_string()))
         .unwrap_or_else(|| "app".to_string());
 
     println!("╔══════════════════════════════════════╗");
@@ -276,6 +277,19 @@ pub fn run_dev_server(file: &Path, port: Option<u16>) -> Result<(), String> {
                 println!(" ❌");
                 eprintln!("  {}", e);
             }
+        }
+    }
+}
+
+fn find_project_root_for_dev(entry: &Path) -> Option<PathBuf> {
+    let mut dir = entry.parent()?;
+    loop {
+        if dir.join("devil.json").exists() {
+            return Some(dir.to_path_buf());
+        }
+        match dir.parent() {
+            Some(p) if p != dir => dir = p,
+            _ => return None,
         }
     }
 }

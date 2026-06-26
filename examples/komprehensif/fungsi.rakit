@@ -1,0 +1,77 @@
+fungsi tambah(a: Angka, b: Angka) -> Angka {
+    berhenti a + b
+}
+
+fungsi kurang(a: Angka, b: Angka) -> Angka {
+    berhenti a - b
+}
+
+fungsi kali(a: Angka, b: Angka) -> Angka {
+    berhenti a * b
+}
+
+fungsi bagi(a: Angka, b: Angka) -> Angka {
+    jika b == 0.0 {
+        berhenti 0.0
+    }
+    berhenti a / b
+}
+
+fungsi faktorial(n: Angka) -> Angka {
+    jika n <= 1.0 {
+        berhenti 1.0
+    }
+    berhenti n * faktorial(n - 1.0)
+}
+
+fungsi fibonacci(n: Angka) -> Angka {
+    jika n <= 1.0 {
+        berhenti n
+    }
+    berhenti fibonacci(n - 1.0) + fibonacci(n - 2.0)
+}
+
+fungsi sapa(nama: String) -> String {
+    berhenti "Halo, {nama}!"
+}
+
+fungsi gabungTeks(a: String, b: String) -> String {
+    berhenti a ++ b
+}
+
+fungsi hitungRataRata(angka: [Angka]) -> Angka {
+    berhenti 3.0
+}
+
+fungsi konversiSuhu(c: Angka) -> Angka {
+    berhenti (c * 9.0 / 5.0) + 32.0
+}
+
+fungsi isGenap(n: Angka) -> Bool {
+    berhenti n % 2.0 == 0.0
+}
+
+fungsi isPrima(n: Angka) -> Bool {
+    jika n <= 1.0 {
+        berhenti salah
+    }
+    ubah i: Angka = 2.0
+    ulang i * i <= n {
+        jika n % i == 0.0 {
+            berhenti salah
+        }
+        i = i + 1.0
+    }
+    berhenti benar
+}
+
+fungsi maxDua(a: Angka, b: Angka) -> Angka {
+    jika a > b {
+        berhenti a
+    }
+    berhenti b
+}
+
+fungsi hitungPersegiPanjang(panjang: Angka, lebar: Angka) -> Angka {
+    berhenti panjang * lebar
+}

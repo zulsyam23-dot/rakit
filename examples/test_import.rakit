@@ -1,0 +1,1 @@
+impor "math" { kali } fungsi main() -> I32 { konstan hasil = kali(5, 3) cetak("5 x 3 = {hasil}") 0 }

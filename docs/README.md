@@ -1,4 +1,4 @@
-# Rakit v1.0.3
+# Rakit v1.0.5
 
 **Bahasa UI Reaktif dalam Bahasa Indonesia**
 
@@ -6,7 +6,7 @@ Rakit adalah bahasa pemrograman untuk membangun antarmuka pengguna (UI) reaktif,
 
 ```
 ╔═══════════════════════════════════════════════╗
-║       Rakit v1.0.3 — Bahasa Indonesia         ║
+║       Rakit v1.0.5 — Bahasa Indonesia         ║
 ║       Pemrograman UI Reaktif                  ║
 ╠═══════════════════════════════════════════════╣
 ║  🏗️  Dibangun di atas Brak Language Toolkit   ║
@@ -16,7 +16,30 @@ Rakit adalah bahasa pemrograman untuk membangun antarmuka pengguna (UI) reaktif,
 ║  ⚡  Kinerja native, zero runtime              ║
 ║  📦  Package manager built-in                 ║
 ║  🛠️  LSP, Formatter, Test framework           ║
-╚═══════════════════════════════════════════════╝
+╚═══════════════════════════════════════════╝
+```
+
+## Struktur Project
+
+Mulai v1.0.5, project Rakit mengikuti struktur standar:
+
+```
+project/
+├── src/                 # Source code (.rakit)
+│   ├── main.rakit       # Entry point
+│   ├── komponen/        # Komponen
+│   ├── index.html       # Web entry (dev server)
+│   ├── aset/            # Static assets (CSS, gambar)
+│   ├── dist/            # Build output (WASM + JS)
+│   └── .rakit-build/    # Temporary Rust build
+├── devil.json           # Project manifest
+└── .gitignore
+```
+
+### Perintah CLI
+```
+rakit dev src/main.rakit --port 8080    # Dev server
+rakit build src/main.rakit --target wasm  # Build WASM
 ```
 
 ## Quick Start

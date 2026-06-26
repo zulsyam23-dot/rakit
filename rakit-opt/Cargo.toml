@@ -1,6 +1,6 @@
 [package]
 name = "rakit-opt"
-version = "0.1.0"
+version = "1.0.5"
 edition = "2021"
 description = "Rakit optimizer — inline, DCE, constant propagation, tree shaking, memo hoist, async opt"
 

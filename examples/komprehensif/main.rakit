@@ -1,0 +1,124 @@
+impor "fungsi" { tambah }
+impor "fungsi" { kurang }
+impor "fungsi" { kali }
+impor "fungsi" { bagi }
+impor "fungsi" { faktorial }
+impor "fungsi" { fibonacci }
+impor "fungsi" { sapa }
+impor "fungsi" { gabungTeks }
+impor "fungsi" { hitungRataRata }
+impor "fungsi" { konversiSuhu }
+impor "fungsi" { isGenap }
+impor "fungsi" { isPrima }
+impor "fungsi" { maxDua }
+impor "fungsi" { hitungPersegiPanjang }
+impor "data" { Pengguna }
+impor "data" { Status }
+impor "data" { Warna }
+impor "data" { Bentuk }
+impor "data" { buatPengguna }
+impor "data" { buatAdmin }
+impor "data" { hitungLuasLingkaran }
+impor "data" { hitungLuasPersegi }
+impor "data" { hitungLuasSegitiga }
+impor "data" { getStatusLabel }
+impor "data" { getWarnaHex }
+impor "data" { describeBentuk }
+impor "kontrol" { hitungTotal }
+impor "kontrol" { cetakBilanganGenap }
+impor "kontrol" { hitungGanjilGenap }
+impor "kontrol" { konversiNilai }
+impor "kontrol" { cobaBagi }
+impor "kontrol" { jumlahkanArray }
+impor "kontrol" { hitungFibonacciLoop }
+impor "kontrol" { HasilHitung }
+impor "komponen/App" { App }
+
+fungsi main() -> Angka {
+    cetak("=== Rakit Komprehensif ===")
+    cetak("")
+
+    konstan a = 42.0
+    konstan b = 17.0
+    ubah hasil = 0.0
+    hasil = a + b
+    cetak("42 + 17 = {hasil}")
+
+    cetak("42 * 17 = {kali(42, 17)}")
+    cetak("100 - 33 = {kurang(100, 33)}")
+    cetak("100 / 25 = {bagi(100, 25)}")
+    cetak("faktorial 5 = {faktorial(5)}")
+    cetak("fibonacci 10 = {fibonacci(10)}")
+
+    konstan pesanSapa = sapa("Andi")
+    cetak("sapa = {pesanSapa}")
+
+    konstan pesanGabung = gabungTeks("Halo", "Dunia")
+    cetak("gabung = {pesanGabung}")
+
+    cetak("rata2 = {hitungRataRata([1, 2, 3, 4, 5])}")
+    cetak("100C ke F = {konversiSuhu(100.0)}")
+    cetak("42 genap? {isGenap(42)}")
+    cetak("17 prima? {isPrima(17)}")
+    cetak("max 42,17 = {maxDua(42, 17)}")
+    cetak("persegi panjang 5x3 = {hitungPersegiPanjang(5.0, 3.0)}")
+
+    cetak("")
+    cetak("--- Struktur Data ---")
+
+    konstan u1 = buatPengguna("Budi", 25, Status.Aktif)
+    cetak("User: {u1.nama}, umur: {u1.umur}")
+
+    konstan a1 = buatAdmin("Siti")
+    cetak("Admin: {a1.nama}, role: {a1.role}")
+
+    cetak("")
+    cetak("--- Pilihan (Enum) ---")
+
+    cetak("Merah = {getWarnaHex(Warna.Merah)}")
+    cetak("Hijau = {getWarnaHex(Warna.Hijau)}")
+    cetak("Biru = {getWarnaHex(Warna.Biru)}")
+
+    konstan desc1 = describeBentuk(Bentuk.Lingkaran(7.0))
+    konstan desc2 = describeBentuk(Bentuk.Persegi(4.0))
+    konstan desc3 = describeBentuk(Bentuk.Segitiga(3.0, 5.0))
+    cetak("{desc1}")
+    cetak("{desc2}")
+    cetak("{desc3}")
+
+    cetak("")
+    cetak("--- Control Flow ---")
+
+    cetak("total 1-10 = {hitungTotal()}")
+
+    ubah arr = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+    cetak("genap 1-10 = {cetakBilanganGenap(arr.salin())}")
+
+    konstan r = hitungGanjilGenap(arr)
+    cetak("ganjil = {r.ganjil}, genap = {r.genap}")
+
+    cetak("nilai 85 = {konversiNilai(85)}")
+    cetak("nilai 65 = {konversiNilai(65)}")
+    cetak("nilai 45 = {konversiNilai(45)}")
+
+    cetak("")
+    cetak("--- Error Handling ---")
+
+    cetak("10 / 2 = {cobaBagi(10, 2)}")
+    cetak("10 / 0 = {cobaBagi(10, 0)}")
+    cetak("10 / 3 = {cobaBagi(10, 3)}")
+
+    cetak("")
+    cetak("--- Fibonacci via Loop ---")
+
+    cetak("fibonacci 1-10 = {hitungFibonacciLoop(10)}")
+
+    cetak("")
+    cetak("--- Array Processing ---")
+
+    cetak("jumlah [1,2,3,4,5] = {jumlahkanArray([1, 2, 3, 4, 5])}")
+
+    cetak("")
+    cetak("=== Selesai! ===")
+    0.0
+}
