@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rakit — Bahasa Pemrograman Modern</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <div class="logo">R</div>
+            <span class="brand-text">Rakit</span>
+        </div>
+        <div class="nav-links">
+            <a href="#beranda" class="nav-link active">Beranda</a>
+            <a href="#rakit" class="nav-link">Rakit</a>
+            <a href="#brak" class="nav-link">Brak</a>
+            <a href="#devil" class="nav-link">Devil</a>
+            <a href="#koding" class="nav-link">Koding</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero-section" id="beranda">
+        <h1>Rakit</h1>
+        <p class="subtitle">Bahasa Pemrograman Modern dalam Bahasa Indonesia</p>
+        <p class="desc">Bangun aplikasi UI reaktif dengan sintaksis yang familiar dan mudah dipahami</p>
+    </section>
+
+    <!-- Fitur Utama -->
+    <section class="section">
+        <h2 class="section-title">Fitur Utama</h2>
+        <p class="section-desc">Rakit menyediakan semua yang dibutuhkan untuk membangun aplikasi UI modern</p>
+        <div class="card-grid">
+            <div class="card">
+                <div class="card-icon">K</div>
+                <h3 class="card-title">30+ Keyword Indonesia</h3>
+                <p class="card-text">fungsi, komponen, jika, ulang, cocok, dan banyak lagi</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">C</div>
+                <h3 class="card-title">React-like Components</h3>
+                <p class="card-text">Komponen dengan props, hooks, dan rendering</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">T</div>
+                <h3 class="card-title">Static Typing</h3>
+                <p class="card-text">Type system dengan type inference</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">N</div>
+                <h3 class="card-title">Native Binary</h3>
+                <p class="card-text">Build langsung ke .exe tanpa runtime</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">P</div>
+                <h3 class="card-title">Package Manager</h3>
+                <p class="card-text">Devil untuk mengelola dependencies</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">L</div>
+                <h3 class="card-title">LSP Support</h3>
+                <p class="card-text">Autocomplete, diagnostics, dan formatting</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rakit Info -->
+    <section class="section" id="rakit">
+        <h2 class="section-title">Apa itu Rakit?</h2>
+        <p class="section-desc">Rakit adalah bahasa pemrograman modern untuk membangun antarmuka pengguna reaktif</p>
+        <div class="two-col">
+            <div>
+                <h3>Filosofi Rakit</h3>
+                <p>Rakit lahir dari keyakinan bahwa bahasa pemrograman tidak harus selalu menggunakan bahasa Inggris. Dengan sintaksis dalam Bahasa Indonesia, Rakit bertujuan untuk:</p>
+                <ul style="margin: 16px 0; padding-left: 20px;">
+                    <li>Menurunkan hambatan bagi developer Indonesia</li>
+                    <li>Meningkatkan produktivitas dengan kode yang lebih natural</li>
+                    <li>Memperkenalkan pemrograman UI reaktif dengan cara yang mudah</li>
+                </ul>
+                <h3>Contoh Kode</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">rakit</span>
+                        <span class="code-title">Hello World</span>
+                    </div>
+                    <pre class="code-content"><code>fungsi main() -> I32 {
+    cetak("Halo, Rakit!")
+    0
+}</code></pre>
+                </div>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">rakit</span>
+                        <span class="code-title">Komponen</span>
+                    </div>
+                    <pre class="code-content"><code>komponen Tombol(teks: Teks) {
+    tampilkan {
+        &lt;button&gt;{teks}&lt;/button&gt;
+    }
+}</code></pre>
+                </div>
+            </div>
+            <div>
+                <h3>Teknologi di Balik Rakit</h3>
+                <div class="tech-item" style="margin-bottom: 16px;">
+                    <h4>Compiler</h4>
+                    <p>Multi-stage: AST → HIR → MIR → LIR → Native/WASM</p>
+                </div>
+                <div class="tech-item" style="margin-bottom: 16px;">
+                    <h4>Type System</h4>
+                    <p>Static typing dengan type inference dan unification</p>
+                </div>
+                <div class="tech-item" style="margin-bottom: 16px;">
+                    <h4>Optimizer</h4>
+                    <p>6 optimization passes: DCE, CP, GVN, Inline, LICM, Fold</p>
+                </div>
+                <div class="tech-item" style="margin-bottom: 16px;">
+                    <h4>LSP Server</h4>
+                    <p>9 fitur: completions, diagnostics, hover, formatting</p>
+                </div>
+                <div class="tech-item" style="margin-bottom: 16px;">
+                    <h4>Polyglot FFI</h4>
+                    <p>Generate binding untuk C, Python, dan Rust</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Brak Info -->
+    <section class="section" id="brak" style="background: #f0f4f8;">
+        <h2 class="section-title">Apa itu Brak?</h2>
+        <p class="section-desc">Brak adalah Language Toolkit yang menjadi fondasi compiler Rakit</p>
+        <div class="two-col">
+            <div>
+                <h3>Arsitektur Compiler</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">pipeline</span>
+                        <span class="code-title">Compilation Pipeline</span>
+                    </div>
+                    <pre class="code-content"><code>Source Code
+    ↓
+[1] Frontend (Lexer + Parser)
+    ↓
+[2] AST (Abstract Syntax Tree)
+    ↓
+[3] HIR (High-level IR)
+    ↓
+[4] MIR (Mid-level IR)
+    ↓
+[5] LIR (Low-level IR)
+    ↓
+[6] Backend (Native/WASM/C)</code></pre>
+                </div>
+                <h3>Komponen Brak</h3>
+                <div class="card-grid">
+                    <div class="card">
+                        <h3 class="card-title">brak-frontend</h3>
+                        <p class="card-text">Lexer dan Parser untuk tokenisasi dan parsing</p>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">brak-ir-ast</h3>
+                        <p class="card-text">Abstract Syntax Tree</p>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">brak-ir-hir</h3>
+                        <p class="card-text">High-level IR dengan type info</p>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">brak-ir-mir</h3>
+                        <p class="card-text">Mid-level IR SSA-like</p>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">brak-ir-lir</h3>
+                        <p class="card-text">Low-level IR siap codegen</p>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">brak-codegen-obj</h3>
+                        <p class="card-text">Object file generator</p>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3>Target Backend</h3>
+                <div class="tech-item" style="margin-bottom: 16px;">
+                    <h4>Native</h4>
+                    <p>Windows (PE), Linux (ELF), macOS (MachO)</p>
+                </div>
+                <div class="tech-item" style="margin-bottom: 16px;">
+                    <h4>WebAssembly</h4>
+                    <p>WASM text format untuk browser</p>
+                </div>
+                <div class="tech-item" style="margin-bottom: 16px;">
+                    <h4>C Code</h4>
+                    <p>Generate C code untuk integrasi</p>
+                </div>
+                <h3>Optimization Passes</h3>
+                <table class="info-table">
+                    <tr><th>Pass</th><th>Deskripsi</th></tr>
+                    <tr><td>DCE</td><td>Dead Code Elimination</td></tr>
+                    <tr><td>CP</td><td>Constant Propagation</td></tr>
+                    <tr><td>CF</td><td>Constant Folding</td></tr>
+                    <tr><td>GVN</td><td>Global Value Numbering</td></tr>
+                    <tr><td>Inline</td><td>Function Inlining</td></tr>
+                    <tr><td>LICM</td><td>Loop Invariant Code Motion</td></tr>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Devil Info -->
+    <section class="section" id="devil">
+        <h2 class="section-title">Apa itu Devil?</h2>
+        <p class="section-desc">Devil adalah package manager profesional untuk ekosistem Rakit</p>
+        <div class="two-col">
+            <div>
+                <h3>Cara Kerja Devil</h3>
+                <div class="workflow">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Init Project</h4>
+                            <p>Buat project baru dengan devil init</p>
+                            <div class="code-block">
+                                <pre class="code-content"><code>devil init my-project</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Install Dependencies</h4>
+                            <p>Install package dari registry</p>
+                            <div class="code-block">
+                                <pre class="code-content"><code>devil install rakit-ui</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Develop</h4>
+                            <p>Jalankan dev server dengan hot reload</p>
+                            <div class="code-block">
+                                <pre class="code-content"><code>devil dev --open</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Build & Deploy</h4>
+                            <p>Build untuk target production</p>
+                            <div class="code-block">
+                                <pre class="code-content"><code>rakit build main.rakit --target win32</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3>Perintah Devil</h3>
+                <div class="command-list">
+                    <div class="command-item">
+                        <code>devil init</code>
+                        <p>Buat project baru</p>
+                    </div>
+                    <div class="command-item">
+                        <code>devil install</code>
+                        <p>Install dependencies</p>
+                    </div>
+                    <div class="command-item">
+                        <code>devil dev</code>
+                        <p>Jalankan dev server</p>
+                    </div>
+                    <div class="command-item">
+                        <code>devil build</code>
+                        <p>Build project</p>
+                    </div>
+                    <div class="command-item">
+                        <code>devil search</code>
+                        <p>Cari package</p>
+                    </div>
+                    <div class="command-item">
+                        <code>devil publish</code>
+                        <p>Publish package</p>
+                    </div>
+                    <div class="command-item">
+                        <code>devil audit</code>
+                        <p>Audit keamanan</p>
+                    </div>
+                    <div class="command-item">
+                        <code>devil doctor</code>
+                        <p>Diagnosa project</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Koding Guide -->
+    <section class="section" id="koding" style="background: #f0f4f8;">
+        <h2 class="section-title">Panduan Koding Rakit</h2>
+        <p class="section-desc">Pelajari cara menulis kode Rakit dari dasar hingga lanjutan</p>
+        <div class="two-col">
+            <div>
+                <h3>1. Fungsi</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">rakit</span>
+                        <span class="code-title">Fungsi Dasar</span>
+                    </div>
+                    <pre class="code-content"><code>fungsi tambah(a: Angka, b: Angka) -> Angka {
+    berhenti a + b
+}
+
+fungsi sapa(nama: Teks) -> Teks {
+    berhenti "Halo, {nama}!"
+}</code></pre>
+                </div>
+
+                <h3>2. Komponen</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">rakit</span>
+                        <span class="code-title">Komponen dengan Props</span>
+                    </div>
+                    <pre class="code-content"><code>komponen Tombol(teks: Teks, warna: Teks) {
+    tampilkan {
+        &lt;button className="tombol" style={warna}&gt;
+            {teks}
+        &lt;/button&gt;
+    }
+}</code></pre>
+                </div>
+
+                <h3>3. Struct</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">rakit</span>
+                        <span class="code-title">Struct Definition</span>
+                    </div>
+                    <pre class="code-content"><code>struk User {
+    nama: Teks,
+    umur: Angka,
+    email: Teks,
+}</code></pre>
+                </div>
+
+                <h3>4. Hooks</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">rakit</span>
+                        <span class="code-title">State Management</span>
+                    </div>
+                    <pre class="code-content"><code>komponen Counter() {
+    keadaan(hitung, aturHitung) = 0;
+
+    tampilkan {
+        &lt;div&gt;
+            &lt;p&gt;{hitung}&lt;/p&gt;
+            &lt;button onClick={() => aturHitung(hitung + 1)}&gt;
+                "+ Tambah"
+            &lt;/button&gt;
+        &lt;/div&gt;
+    }
+}</code></pre>
+                </div>
+            </div>
+            <div>
+                <h3>Tipe Data</h3>
+                <table class="info-table">
+                    <tr><th>Tipe</th><th>Deskripsi</th></tr>
+                    <tr><td><code>Angka</code></td><td>F64 (float 64-bit)</td></tr>
+                    <tr><td><code>Teks</code></td><td>String</td></tr>
+                    <tr><td><code>BenarSalah</code></td><td>Bool</td></tr>
+                    <tr><td><code>Huruf</code></td><td>Char</td></tr>
+                    <tr><td><code>Kosong</code></td><td>Void</td></tr>
+                    <tr><td><code>Node</code></td><td>Tipe elemen UI</td></tr>
+                </table>
+
+                <h3>Keyword Penting</h3>
+                <table class="info-table">
+                    <tr><th>Keyword</th><th>Deskripsi</th></tr>
+                    <tr><td><code>fungsi</code></td><td>Deklarasi fungsi</td></tr>
+                    <tr><td><code>komponen</code></td><td>Deklarasi komponen</td></tr>
+                    <tr><td><code>tampilkan</code></td><td>Blok rendering</td></tr>
+                    <tr><td><code>konstan</code></td><td>Variabel immutable</td></tr>
+                    <tr><td><code>ubah</code></td><td>Variabel mutable</td></tr>
+                    <tr><td><code>berhenti</code></td><td>Return value</td></tr>
+                    <tr><td><code>impor</code></td><td>Import module</td></tr>
+                    <tr><td><code>struk</code></td><td>Definisi struct</td></tr>
+                </table>
+
+                <h3>Common Mistakes</h3>
+                <table class="info-table">
+                    <tr><th>Salah</th><th>Benar</th></tr>
+                    <tr><td><code>struktur</code></td><td><code>struk</code></td></tr>
+                    <tr><td><code>import</code></td><td><code>impor</code></td></tr>
+                    <tr><td><code>return</code></td><td><code>berhenti</code></td></tr>
+                    <tr><td><code>let</code></td><td><code>konstan</code></td></tr>
+                    <tr><td><code>true/false</code></td><td><code>benar/salah</code></td></tr>
+                    <tr><td><code>null</code></td><td><code>batal</code></td></tr>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Rakit</h4>
+                <p>Bahasa pemrograman modern dalam Bahasa Indonesia</p>
+            </div>
+            <div class="footer-section">
+                <h4>Links</h4>
+                <ul>
+                    <li>GitHub</li>
+                    <li>Dokumentasi</li>
+                    <li>Community</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Tools</h4>
+                <ul>
+                    <li>Devil Package Manager</li>
+                    <li>Brak Language Toolkit</li>
+                    <li>LSP Server</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>2026 Rakit Team. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

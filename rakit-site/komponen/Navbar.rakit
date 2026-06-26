@@ -1,0 +1,19 @@
+// Komponen Navbar
+
+komponen Navbar() {
+    tampilkan {
+        <nav className="navbar">
+            <div className="nav-brand">
+                <span className="logo">R</span>
+                <span className="brand-text">Rakit</span>
+            </div>
+            <div className="nav-links">
+                <span className="nav-link">Beranda</span>
+                <span className="nav-link">Rakit</span>
+                <span className="nav-link">Brak</span>
+                <span className="nav-link">Devil</span>
+                <span className="nav-link">Koding</span>
+            </div>
+        </nav>
+    }
+}

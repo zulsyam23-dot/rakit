@@ -1,0 +1,51 @@
+// ============================================
+// RAKIT SITE — Situs Profil Rakit, Brak, Devil
+// ============================================
+
+// Import komponen
+impor "komponen/Navbar" { Navbar }
+impor "komponen/Hero" { Hero }
+impor "komponen/Card" { Card }
+impor "komponen/CodeBlock" { CodeBlock }
+impor "komponen/Footer" { Footer }
+
+// Komponen Utama
+komponen App() {
+    tampilkan {
+        <div className="app">
+            <Navbar />
+
+            <section className="hero-section">
+                <h1>"Rakit"</h1>
+                <p>"Bahasa Pemrograman Modern dalam Bahasa Indonesia"</p>
+            </section>
+
+            <section className="features">
+                <h2>"Fitur Utama"</h2>
+                <div className="feature-grid">
+                    <Card judul="30+ Keyword" isi="fungsi, komponen, jika, ulang, cocok" icon="K" />
+                    <Card judul="Components" isi="Komponen dengan props dan hooks" icon="C" />
+                    <Card judul="Native Binary" isi="Build ke .exe tanpa runtime" icon="N" />
+                    <Card judul="Package Manager" isi="Devil untuk dependencies" icon="P" />
+                </div>
+            </section>
+
+            <section className="tech-section">
+                <h2>"Teknologi"</h2>
+                <div className="tech-grid">
+                    <Card judul="Brak" isi="Language Toolkit untuk compiler" icon="B" />
+                    <Card judul="Devil" isi="Package Manager untuk Rakit" icon="D" />
+                    <Card judul="LSP" isi="Language Server Protocol support" icon="L" />
+                </div>
+            </section>
+
+            <Footer />
+        </div>
+    }
+}
+
+// Entry point
+fungsi main() -> I32 {
+    cetak("Rakit Site loaded!")
+    0
+}

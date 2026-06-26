@@ -1,0 +1,33 @@
+// Komponen Footer
+
+komponen Footer() {
+    tampilkan {
+        <footer className="footer">
+            <div className="footer-content">
+                <div className="footer-section">
+                    <h4>"Rakit"</h4>
+                    <p>"Bahasa pemrograman modern dalam Bahasa Indonesia"</p>
+                </div>
+                <div className="footer-section">
+                    <h4>"Links"</h4>
+                    <ul>
+                        <li>"GitHub"</li>
+                        <li>"Dokumentasi"</li>
+                        <li>"Community"</li>
+                    </ul>
+                </div>
+                <div className="footer-section">
+                    <h4>"Tools"</h4>
+                    <ul>
+                        <li>"Devil Package Manager"</li>
+                        <li>"Brak Language Toolkit"</li>
+                        <li>"LSP Server"</li>
+                    </ul>
+                </div>
+            </div>
+            <div className="footer-bottom">
+                <p>"2026 Rakit Team. All rights reserved."</p>
+            </div>
+        </footer>
+    }
+}

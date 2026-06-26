@@ -1,0 +1,18 @@
+{
+  "package": {
+    "name": "rakit-site",
+    "version": "1.0.0",
+    "description": "Situs profil Rakit, Brak, dan Devil"
+  },
+  "targets": {
+    "web": {
+      "entry": "main.rakit",
+      "output": "dist/"
+    }
+  },
+  "scripts": {
+    "dev": "rakit dev main.rakit --port 8080",
+    "build": "rakit build main.rakit --target web",
+    "start": "rakit run main.rakit"
+  }
+}

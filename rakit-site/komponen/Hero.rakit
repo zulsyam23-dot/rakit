@@ -1,0 +1,13 @@
+// Komponen Hero
+
+komponen Hero() {
+    tampilkan {
+        <section className="hero">
+            <div className="hero-content">
+                <h1>"Rakit"</h1>
+                <p className="hero-subtitle">"Bahasa Pemrograman Modern dalam Bahasa Indonesia"</p>
+                <p className="hero-desc">"Bangun aplikasi UI reaktif dengan sintaksis yang familiar"</p>
+            </div>
+        </section>
+    }
+}

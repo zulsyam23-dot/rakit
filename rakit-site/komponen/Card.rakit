@@ -1,0 +1,11 @@
+// Komponen Card
+
+komponen Card(judul: Teks, isi: Teks, icon: Teks) {
+    tampilkan {
+        <div className="card">
+            <div className="card-icon">{icon}</div>
+            <h3 className="card-title">{judul}</h3>
+            <p className="card-text">{isi}</p>
+        </div>
+    }
+}

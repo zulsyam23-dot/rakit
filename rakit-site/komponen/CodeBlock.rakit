@@ -1,0 +1,15 @@
+// Komponen CodeBlock
+
+komponen CodeBlock(judul: Teks, kode: Teks, bahasa: Teks) {
+    tampilkan {
+        <div className="code-block">
+            <div className="code-header">
+                <span className="code-lang">{bahasa}</span>
+                <span className="code-title">{judul}</span>
+            </div>
+            <pre className="code-content">
+                <code>{kode}</code>
+            </pre>
+        </div>
+    }
+}

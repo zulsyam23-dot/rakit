@@ -1,0 +1,183 @@
+// Halaman Koding — Panduan Lengkap Koding Rakit
+
+komponen KodingInfo() {
+    tampilkan {
+        <div className="page">
+            <Section judul="Panduan Koding Rakit" deskripsi="Pelajari cara menulis kode Rakit dari dasar hingga lanjutan" />
+
+            <div className="content-grid">
+                <div className="content-main">
+                    <h3>"1. Fungsi"</h3>
+                    <p>"Fungsi adalah blok kode yang bisa dipanggil ulang. Gunakan keyword fungsi untuk mendeklarasikan."</p>
+                    <CodeBlock judul="Fungsi Dasar" kode='fungsi tambah(a: Angka, b: Angka) -> Angka {
+    berhenti a + b
+}
+
+fungsi sapa(nama: Teks) -> Teks {
+    berhenti "Halo, {nama}!"
+}' bahasa="rakit" />
+
+                    <h3>"2. Komponen"</h3>
+                    <p>"Komponen adalah blok UI yang bisa direuse. Gunakan keyword komponen untuk mendeklarasikan."</p>
+                    <CodeBlock judul="Komponen dengan Props" kode='komponen Tombol(teks: Teks, warna: Teks) {
+    tampilkan {
+        <button className="tombol" style={warna}>
+            {teks}
+        </button>
+    }
+}' bahasa="rakit" />
+
+                    <h3>"3. Struct"</h3>
+                    <p>"Struct adalah tipe data yang mengelompokkan beberapa field."</p>
+                    <CodeBlock judul="Struct" kode='struk User {
+    nama: Teks,
+    umur: Angka,
+    email: Teks,
+}' bahasa="rakit" />
+
+                    <h3>"4. Enum"</h3>
+                    <p>"Enum adalah tipe data yang punya beberapa varian."</p>
+                    <CodeBlock judul="Enum" kode='pilihan Status {
+    Aktif,
+    Nonaktif,
+    Pending(Teks),
+}' bahasa="rakit" />
+
+                    <h3>"5. Import"</h3>
+                    <p>"Import module atau komponen dari file lain."</p>
+                    <CodeBlock judul="Import" kode='impor "komponen/Tombol" { Tombol }
+impor "utils/helper" { formatHarga }' bahasa="rakit" />
+
+                    <h3>"6. Hooks"</h3>
+                    <p>"Hooks digunakan untuk state management dan side effects."</p>
+                    <CodeBlock judul="Hooks" kode='komponen Counter() {
+    keadaan(hitung, aturHitung) = 0;
+    efek(() => { cetak("Mounted!"); }, []);
+
+    tampilkan {
+        <div>
+            <p>{hitung}</p>
+            <button onClick={() => aturHitung(hitung + 1)}>
+                "+ Tambah"
+            </button>
+        </div>
+    }
+}' bahasa="rakit" />
+
+                    <h3>"7. Rendering Syntax"</h3>
+                    <p>"Rakit menggunakan sintaksis rendering sendiri (bukan JSX)."</p>
+                    <CodeBlock judul="Rendering" kode='tampilkan {
+    <div className="container">
+        <h1>"Judul"</h1>
+        <p>{isi}</p>
+        <Tombol teks="Klik" warna="biru" />
+    </div>
+}' bahasa="rakit" />
+
+                    <h3>"8. Control Flow"</h3>
+                    <p>"Rakit punya if, loop, dan pattern matching."</p>
+                    <CodeBlock judul="Control Flow" kode='jika (kondisi) {
+    cetak("Benar")
+} lain {
+    cetak("Salah")
+}
+
+ulang (i < 10) {
+    cetak("Iterasi {i}")
+}
+
+cocok (nilai) {
+    kasus 1 => cetak("Satu"),
+    kasus _ => cetak("Lainnya"),
+}' bahasa="rakit" />
+                </div>
+
+                <div className="content-sidebar">
+                    <h3>"Tipe Data"</h3>
+                    <div className="type-list">
+                        <div className="type-item">
+                            <code>"Angka"</code>
+                            <p>"= F64 (float 64-bit)"</p>
+                        </div>
+                        <div className="type-item">
+                            <code>"Teks"</code>
+                            <p>"= String"</p>
+                        </div>
+                        <div className="type-item">
+                            <code>"BenarSalah"</code>
+                            <p>"= Bool"</p>
+                        </div>
+                        <div className="type-item">
+                            <code>"Huruf"</code>
+                            <p>"= Char"</p>
+                        </div>
+                        <div className="type-item">
+                            <code>"Kosong"</code>
+                            <p>"= Void"</p>
+                        </div>
+                    </div>
+
+                    <h3>"Keyword Penting"</h3>
+                    <div className="keyword-list">
+                        <div className="keyword-item">
+                            <code>"fungsi"</code>
+                            <p>"Deklarasi fungsi"</p>
+                        </div>
+                        <div className="keyword-item">
+                            <code>"komponen"</code>
+                            <p>"Deklarasi komponen"</p>
+                        </div>
+                        <div className="keyword-item">
+                            <code>"tampilkan"</code>
+                            <p>"Blok rendering"</p>
+                        </div>
+                        <div className="keyword-item">
+                            <code>"konstan"</code>
+                            <p>"Variabel immutable"</p>
+                        </div>
+                        <div className="keyword-item">
+                            <code>"ubah"</code>
+                            <p>"Variabel mutable"</p>
+                        </div>
+                        <div className="keyword-item">
+                            <code>"berhenti"</code>
+                            <p>"Return value"</p>
+                        </div>
+                        <div className="keyword-item">
+                            <code>"impor"</code>
+                            <p>"Import module"</p>
+                        </div>
+                        <div className="keyword-item">
+                            <code>"struk"</code>
+                            <p>"Definisi struct"</p>
+                        </div>
+                    </div>
+
+                    <h3>"Common Mistakes"</h3>
+                    <div className="mistake-list">
+                        <div className="mistake-item">
+                            <span className="wrong">"struktur"</span>
+                            <span className="arrow">"</span>
+                            <span className="correct">"struk"</span>
+                        </div>
+                        <div className="mistake-item">
+                            <span className="wrong">"import"</span>
+                            <span className="arrow">"</span>
+                            <span className="correct">"impor"</span>
+                        </div>
+                        <div className="mistake-item">
+                            <span className="wrong">"return"</span>
+                            <span className="arrow">"</span>
+                            <span className="correct">"berhenti"</span>
+                        </div>
+                        <div className="mistake-item">
+                            <span className="wrong">"let"</span>
+                            <span className="arrow">"</span>
+                            <span className="correct">"konstan"</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}

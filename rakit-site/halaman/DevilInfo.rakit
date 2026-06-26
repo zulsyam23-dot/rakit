@@ -1,0 +1,100 @@
+// Halaman Devil — Package Manager
+
+komponen DevilInfo() {
+    tampilkan {
+        <div className="page">
+            <Section judul="Apa itu Devil?" deskripsi="Devil adalah package manager profesional untuk ekosistem Rakit" />
+
+            <div className="content-grid">
+                <div className="content-main">
+                    <h3>"Overview"</h3>
+                    <p>"Devil adalah package manager yang dirancang khusus untuk bahasa Rakit. Devil mengelola dependencies, build, publish, dan distribusi package dengan mudah."</p>
+
+                    <h3>"Cara Kerja Devil"</h3>
+                    <div className="workflow">
+                        <div className="workflow-step">
+                            <div className="step-number">1</div>
+                            <div className="step-content">
+                                <h4>"Init Project"</h4>
+                                <p>"Buat project baru dengan devil init"</p>
+                                <CodeBlock judul="Command" kode='devil init my-project' bahasa="bash" />
+                            </div>
+                        </div>
+                        <div className="workflow-step">
+                            <div className="step-number">2</div>
+                            <div className="step-content">
+                                <h4>"Install Dependencies"</h4>
+                                <p>"Install package dari registry"</p>
+                                <CodeBlock judul="Command" kode='devil install rakit-ui' bahasa="bash" />
+                            </div>
+                        </div>
+                        <div className="workflow-step">
+                            <div className="step-number">3</div>
+                            <div className="step-content">
+                                <h4>"Develop"</h4>
+                                <p>"Jalankan dev server dengan hot reload"</p>
+                                <CodeBlock judul="Command" kode='devil dev --open' bahasa="bash" />
+                            </div>
+                        </div>
+                        <div className="workflow-step">
+                            <div className="step-number">4</div>
+                            <div className="step-content">
+                                <h4>"Build & Deploy"</h4>
+                                <p>"Build untuk target production"</p>
+                                <CodeBlock judul="Command" kode='rakit build main.rakit --target win32' bahasa="bash" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>"Fitur Devil"</h3>
+                    <div className="feature-grid">
+                        <Card judul="Package Registry" isi="Search, install, publish package ke registry" icon="R" />
+                        <Card judul="Dependency Resolution" isi="Resolusi dependency secara otomatis" icon="D" />
+                        <Card judul="Lockfile" isi="devil.lock untuk reproducible builds" icon="L" />
+                        <Card judul="Dev Server" isi="Hot reload dengan live preview" icon="S" />
+                        <Card judul="Security Audit" isi="Audit keamanan dependency" icon="A" />
+                        <Card judul="Component Library" isi="Library komponen siap pakai" icon="C" />
+                    </div>
+                </div>
+
+                <div className="content-sidebar">
+                    <h3>"Perintah Devil"</h3>
+                    <div className="command-list">
+                        <div className="command-item">
+                            <code>"devil init"</code>
+                            <p>"Buat project baru"</p>
+                        </div>
+                        <div className="command-item">
+                            <code>"devil install"</code>
+                            <p>"Install dependencies"</p>
+                        </div>
+                        <div className="command-item">
+                            <code>"devil dev"</code>
+                            <p>"Jalankan dev server"</p>
+                        </div>
+                        <div className="command-item">
+                            <code>"devil build"</code>
+                            <p>"Build project"</p>
+                        </div>
+                        <div className="command-item">
+                            <code>"devil search"</code>
+                            <p>"Cari package"</p>
+                        </div>
+                        <div className="command-item">
+                            <code>"devil publish"</code>
+                            <p>"Publish package"</p>
+                        </div>
+                        <div className="command-item">
+                            <code>"devil audit"</code>
+                            <p>"Audit keamanan"</p>
+                        </div>
+                        <div className="command-item">
+                            <code>"devil doctor"</code>
+                            <p>"Diagnosa project"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
