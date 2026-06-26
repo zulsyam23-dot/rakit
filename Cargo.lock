@@ -101,6 +101,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "brak-codegen-obj"
+version = "0.1.0"
+dependencies = [
+ "brak-codegen-traits",
+ "brak-core",
+ "brak-ir-lir",
+ "iced-x86",
+]
+
+[[package]]
 name = "brak-codegen-traits"
 version = "0.1.0"
 dependencies = [
@@ -159,6 +169,21 @@ dependencies = [
  "brak-core",
  "brak-ir-hir",
  "serde",
+]
+
+[[package]]
+name = "brak-link-native"
+version = "0.1.0"
+dependencies = [
+ "brak-core",
+ "brak-link-traits",
+]
+
+[[package]]
+name = "brak-link-traits"
+version = "0.1.0"
+dependencies = [
+ "brak-core",
 ]
 
 [[package]]
@@ -820,6 +845,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
+name = "iced-x86"
+version = "1.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c447cff8c7f384a7d4f741cfcff32f75f3ad02b406432e8d6c878d56b1edf6b"
+dependencies = [
+ "lazy_static",
+]
+
+[[package]]
 name = "icu_collections"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -994,6 +1028,12 @@ dependencies = [
  "bitflags 2.13.0",
  "libc",
 ]
+
+[[package]]
+name = "lazy_static"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
@@ -1241,6 +1281,7 @@ name = "rakit-bridge"
 version = "0.1.0"
 dependencies = [
  "brak-codegen-c",
+ "brak-codegen-obj",
  "brak-codegen-traits",
  "brak-codegen-wasm",
  "brak-core",
@@ -1248,6 +1289,8 @@ dependencies = [
  "brak-ir-hir",
  "brak-ir-lir",
  "brak-ir-mir",
+ "brak-link-native",
+ "brak-link-traits",
  "brak-opt-cp",
  "brak-opt-dce",
  "brak-opt-gvn",
