@@ -1,4 +1,4 @@
-# Rakit v1.0
+# Rakit v1.0.3
 
 **Bahasa UI Reaktif dalam Bahasa Indonesia**
 
@@ -6,8 +6,8 @@ Rakit adalah bahasa pemrograman untuk membangun antarmuka pengguna (UI) reaktif,
 
 ```
 ╔═══════════════════════════════════════════════╗
-║         Rakit v1.0 — Bahasa Indonesia         ║
-║         Pemrograman UI Reaktif                ║
+║       Rakit v1.0.3 — Bahasa Indonesia         ║
+║       Pemrograman UI Reaktif                  ║
 ╠═══════════════════════════════════════════════╣
 ║  🏗️  Dibangun di atas Brak Language Toolkit   ║
 ║  🎯  React-like dalam Bahasa Indonesia         ║

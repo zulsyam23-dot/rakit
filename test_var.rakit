@@ -1,6 +1,0 @@
-fungsi main() {
-    konstan x = 42
-    jika x > 0 {
-        x
-    }
-}

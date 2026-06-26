@@ -1,5 +1,41 @@
 # Changelog Rakit
 
+## v1.0.3 — 26 Juni 2026
+
+### Bug Fixes
+- **Component props**: Props komponen sekarang bisa diakses langsung di JSX dan body.  
+  Sebelumnya `komponen Halaman(judul: Teks)` gagal karena `judul` tidak dikenal di scope.  
+  HIR lowering sekarang membuat `let` binding untuk SETIAP prop, bukan hanya untuk struct-type props.
+- **Import module**: Import untuk built-in functions (cetak, tampilkan, dll) tidak lagi menampilkan warning.  
+  `dari "std/io" gunakan { cetak }` sekarang resolved secara silent karena `cetak` sudah registered sebagai builtin.
+
+### Fitur Baru
+- **Native binary output**: Build sekarang bisa menghasilkan `.exe` langsung tanpa cargo/rustc.  
+  `rakit build file.rakit --target win32` → menghasilkan PE executable.  
+  Menggunakan Brak codegen (ObjBackend) + native linker (NativeLinker).
+- **Multi-target support**: `--target` sekarang mendukung `wasm`, `win32`, `linux`, `macos`.
+
+### Test Results
+- 176/176 unit tests pass
+- 12/12 example files build successfully (WASM)
+- 6/6 example files build successfully (native PE)
+- 0 regressions
+
+---
+
+## v1.0.2 — 26 Juni 2026
+
+### Perbaikan
+- **Distribusi**: `rakit.cmd` sekarang menjalankan `bin\rakit.exe` langsung (sebelumnya menggunakan `cargo run` yang membutuhkan Rust toolchain).
+- **Binary release**: Rebuild binary dengan perbaikan terbaru dari seluruh 19 subcrate.
+
+### Catatan
+- Seluruh komponen linter dan compiler berjalan tanpa error
+- 19 subcrate dalam workspace berjalan dengan baik
+- Distribution zip telah diupdate ke v1.0.2
+
+---
+
 ## v1.0.1 — 24 Juni 2026
 
 ### Bug Fixes

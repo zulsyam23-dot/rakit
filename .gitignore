@@ -7,3 +7,5 @@ tmp/
 *.dll
 *.pdb
 .rakit-cache/
+.rakit-build/
+dist/

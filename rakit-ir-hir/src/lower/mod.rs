@@ -106,23 +106,18 @@ impl HirLower {
 
         // Buat let binding untuk setiap prop agar nama prop bisa diakses langsung
         // (seperti Svelte — nama prop langsung available di scope komponen)
-        // Iterate over struct fields of the first (and usually only) param
-        if let Some(first_param) = c.props.first() {
-            if let ast::Type::Struct(fields) = &first_param.ty {
-                for field in fields {
-                    body_stmts.push(HirStmt::Let(HirLet {
-                        name: field.name.clone(),
-                        mutable: false,
-                        ty: lower_type(&field.ty),
-                        value: HirExpr::Member(HirMember {
-                            object: Box::new(HirExpr::Ident("props".into(), TypeInfo::Infer)),
-                            field: field.name.clone(),
-                            ty: lower_type(&field.ty),
-                        }),
-                        span: first_param.span,
-                    }));
-                }
-            }
+        for prop in &c.props {
+            body_stmts.push(HirStmt::Let(HirLet {
+                name: prop.name.clone(),
+                mutable: false,
+                ty: lower_type(&prop.ty),
+                value: HirExpr::Member(HirMember {
+                    object: Box::new(HirExpr::Ident("props".into(), TypeInfo::Infer)),
+                    field: prop.name.clone(),
+                    ty: lower_type(&prop.ty),
+                }),
+                span: prop.span,
+            }));
         }
 
         for stmt in &c.body.statements {

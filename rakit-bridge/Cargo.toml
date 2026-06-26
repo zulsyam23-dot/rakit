@@ -18,6 +18,9 @@ brak-ir-lir = { path = "C:/Users/PC/Documents/anak/brak/brak-ir-lir" }
 brak-codegen-traits = { path = "C:/Users/PC/Documents/anak/brak/brak-codegen-traits" }
 brak-codegen-wasm = { path = "C:/Users/PC/Documents/anak/brak/brak-codegen-wasm" }
 brak-codegen-c = { path = "C:/Users/PC/Documents/anak/brak/brak-codegen-c" }
+brak-codegen-obj = { path = "C:/Users/PC/Documents/anak/brak/brak-codegen-obj" }
+brak-link-traits = { path = "C:/Users/PC/Documents/anak/brak/brak-link-traits" }
+brak-link-native = { path = "C:/Users/PC/Documents/anak/brak/brak-link-native" }
 brak-opt-traits = { path = "C:/Users/PC/Documents/anak/brak/brak-opt-traits" }
 brak-opt-dce = { path = "C:/Users/PC/Documents/anak/brak/brak-opt-dce" }
 brak-opt-cp = { path = "C:/Users/PC/Documents/anak/brak/brak-opt-cp" }

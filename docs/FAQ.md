@@ -14,7 +14,7 @@ Windows (Win32 native), Linux (GTK4), dan Web (WASM).
 
 ## Apakah Rakit siap untuk production?
 
-Ya, Rakit v1.0 memiliki semua fitur yang diperlukan untuk production: type system, optimasi compiler, polyglot FFI, package manager, LSP, formatter, dan test framework.
+Ya, Rakit v1.0.3 memiliki semua fitur yang diperlukan untuk production: type system, optimasi compiler, polyglot FFI, package manager, LSP, formatter, dan test framework. Build native langsung ke .exe tanpa cargo.
 
 ## Bagaimana performanya?
 

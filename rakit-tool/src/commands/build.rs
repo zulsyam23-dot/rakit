@@ -158,9 +158,11 @@ impl BuildCommand {
         println!("  Rust source: {}", lib_rs_path.display());
         println!("  Cargo.toml: {}", cargo_toml_path.display());
 
-        let wasm_target = target.unwrap_or("wasm32-unknown-unknown");
-        if wasm_target == "wasm32-unknown-unknown" || wasm_target == "wasm" {
-            println!("\n  Kompilasi ke WASM...");
+        let build_target = target.unwrap_or("wasm32-unknown-unknown");
+        
+        if build_target == "wasm32-unknown-unknown" || build_target == "wasm" {
+            // === WASM Build Path ===
+            println!("\n=== Kompilasi WASM ===");
             let status = Command::new("cargo")
                 .args(&[
                     "build",
@@ -199,7 +201,7 @@ impl BuildCommand {
             if let Some(src) = wasm_source {
                 fs::copy(&src, &wasm_dest)
                     .map_err(|e| format!("Gagal copy .wasm: {}", e))?;
-                println!("  ✅ WASM output: {}", wasm_dest.display());
+                println!("  WASM output: {}", wasm_dest.display());
 
                 let wb_status = Command::new("wasm-bindgen")
                     .args(&[
@@ -212,16 +214,14 @@ impl BuildCommand {
                     .status();
                 match wb_status {
                     Ok(status) if status.success() => {
-                        println!("  ✅ JS glue: {}\\{}_bg.js", project_dir.display(), app_name);
+                        println!("  JS glue: {}\\{}_bg.js", project_dir.display(), app_name);
                     }
                     _ => {
-                        println!("  ℹ️  wasm-bindgen tidak dijalankan. Install: cargo install wasm-bindgen-cli");
-                        println!("     Atau jalankan manual: wasm-bindgen {} --out-dir {} --target web",
-                            wasm_dest.display(), project_dir.display());
+                        println!("  wasm-bindgen tidak dijalankan. Install: cargo install wasm-bindgen-cli");
                     }
                 }
             } else {
-                println!("  ⚠️  WASM tidak ditemukan. Cari di: {:?}", wasm_dir);
+                println!("  WASM tidak ditemukan. Cari di: {:?}", wasm_dir);
                 if wasm_dir.exists() {
                     if let Ok(entries) = std::fs::read_dir(&wasm_dir) {
                         for entry in entries.flatten() {
@@ -230,6 +230,42 @@ impl BuildCommand {
                     }
                 }
             }
+        } else if build_target == "win32" || build_target == "linux" || build_target == "macos" {
+            // === Native Build Path (via Brak) ===
+            println!("\n=== Native Codegen (Brak) ===");
+            
+            let compiler = rakit_bridge::RakitCompiler::new();
+            match compiler.compile_to_native(&hir, "main") {
+                Ok(executable) => {
+                    let ext = if build_target == "win32" { ".exe" } else { "" };
+                    let exe_name = format!("{}{}", app_name, ext);
+                    let exe_path = output
+                        .map(|p| p.to_path_buf())
+                        .unwrap_or_else(|| project_dir.join(&exe_name));
+                    
+                    fs::write(&exe_path, &executable)
+                        .map_err(|e| format!("Gagal tulis executable: {}", e))?;
+                    
+                    println!("  Native executable: {}", exe_path.display());
+                    println!("  Size: {} bytes", executable.len());
+                    
+                    #[cfg(unix)]
+                    {
+                        use std::os::unix::fs::PermissionsExt;
+                        let perms = std::fs::Permissions::from_mode(0o755);
+                        fs::set_permissions(&exe_path, perms)
+                            .map_err(|e| format!("Gagal set permissions: {}", e))?;
+                    }
+                }
+                Err(e) => {
+                    let msgs: Vec<String> = e.iter().map(|d| d.message.clone()).collect();
+                    println!("  Native codegen gagal: {}", msgs.join("; "));
+                    println!("  Fallback: generate Rust source saja (tanpa compile)");
+                    println!("  Source: {}", lib_rs_path.display());
+                }
+            }
+        } else {
+            println!("\n  Target '{}' tidak dikenal. Gunakan: wasm, win32, linux, macos", build_target);
         }
 
         println!("\n✅ Build sukses! AST: {} item, HIR: {} item, Type check: OK, Opt level: {}",
@@ -260,6 +296,10 @@ fn resolve_all_imports(hir: &mut HirProgram, entry_dir: &Path, cache: &mut HashM
         }
         let target_file = resolve_import_path(imp, entry_dir);
         if target_file.is_none() {
+            // If all imported names are builtins, skip silently
+            if !all_names_are_builtins(&imp.names) {
+                println!("  ⚠️  Import '{}' tidak ditemukan (dir: {})", imp.module, entry_dir.display());
+            }
             import_indices.push(i);
             continue;
         }
@@ -307,9 +347,22 @@ fn resolve_import_path(imp: &HirImport, base_dir: &Path) -> Option<std::path::Pa
     if target.exists() {
         Some(target)
     } else {
-        println!("  ⚠️  Import '{}' tidak ditemukan (dir: {})", imp.module, base_dir.display());
         None
     }
+}
+
+/// Check if all imported names are builtins (already available without import)
+fn all_names_are_builtins(names: &[String]) -> bool {
+    let builtins = [
+        "cetak", "tulis", "baca", "input",
+        "render", "tampilkan", "parseJSON", "stringifyJSON",
+        "konteks", "tunda", "sekarang", "CSS", "waktu", "Hasil",
+        "jalan", "acu", "panggil", "pengedger", "berhenti",
+        "gunakanFetch", "gunakanKonteks", "Timer",
+        "h", "text", "fragment",
+        "benar", "salah", "batal",
+    ];
+    names.iter().all(|n| builtins.contains(&n.as_str()))
 }
 
 fn load_resolved_module(path: &Path, cache: &mut HashMap<String, Vec<HirItem>>) -> Result<Vec<HirItem>, String> {

@@ -1,5 +1,0 @@
-fungsi main() {
-    jika (x > y) {
-        cetak("ok")
-    }
-}

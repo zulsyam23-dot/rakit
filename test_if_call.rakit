@@ -1,5 +1,0 @@
-fungsi main() {
-    jika benar {
-        cetak("ok")
-    }
-}

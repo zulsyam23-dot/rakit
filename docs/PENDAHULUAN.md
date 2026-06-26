@@ -13,7 +13,7 @@ Rakit menggabungkan konsep React (komponen, hooks, VDOM) dengan sintaksis yang f
 ## Instalasi
 
 ### Download Cepat (Windows)
-Download **rakit-v1.0.1-windows.zip** dari halaman [GitHub Releases](https://github.com/zulsyam23-dot/rakit/releases), extract, lalu jalankan `rakit.cmd`.
+Download **rakit-v1.0.3-windows.zip** dari halaman [GitHub Releases](https://github.com/zulsyam23-dot/rakit/releases), extract, lalu jalankan `rakit.cmd`.
 
 ### Prasyarat
 
@@ -35,7 +35,7 @@ cargo build --release
 
 ```bash
 rakit --version
-# Rakit v1.0.1
+# Rakit v1.0.3
 ```
 
 ## Struktur Project

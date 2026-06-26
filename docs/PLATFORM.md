@@ -2,12 +2,14 @@
 
 ## Windows (Win32)
 
-Target native untuk Windows menggunakan Win32 API.
+Target native untuk Windows. Build langsung ke PE executable.
 
 ```bash
-rakit build main.rakit --target win32 --output app.exe
-./app.exe
+rakit build main.rakit --target win32
+# Output: app.exe (native PE binary)
 ```
+
+Menggunakan Brak codegen (x86_64) + native linker. Tidak perlu cargo/rustc untuk distribusi.
 
 Fitur:
 - Native Windows window
