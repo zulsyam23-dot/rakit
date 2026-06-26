@@ -1,17 +1,7 @@
 // Demo Rakit App — Minimal
 
-// Komponen App
-komponen App() {
-    tampilkan {
-        <div className="app">
-            <h1>"Rakit Demo"</h1>
-            <p>"Aplikasi yang dibuat dengan bahasa Rakit"</p>
-        </div>
-    }
-}
-
 // Entry point
-fungsi main() -> I32 {
+fungsi main() -> Angka {
     cetak("Rakit Demo loaded!")
     0
 }

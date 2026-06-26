@@ -1,7 +1,5 @@
 // Program Rakit pertama — Halo Dunia!
 
-impor "std/io" { cetak }
-
 fungsi tambah(a: Angka, b: Angka) -> Angka {
     berhenti a + b
 }
@@ -19,15 +17,16 @@ pilihan Status {
 komponen Halaman(judul: Teks) {
     konstan pesan = "Halo dari Rakit!"
     konstan jumlah = tambah(5, 3)
+    konstan jumlahStr = "Jumlah: " ++ jumlah
 
-    tampilkan <div kelas="container" id={judul}>
+    tampilkan <div className="container" id={judul}>
         <h1>{judul}</h1>
         <p>{pesan}</p>
-        <span>Jumlah: {jumlah}</span>
+        <span>{jumlahStr}</span>
     </div>
 }
 
-fungsi utama() {
+fungsi main() -> Angka {
     konstan x: Angka = 42
     ubah y = 10
 
@@ -41,5 +40,5 @@ fungsi utama() {
         y = y - 1
     }
 
-    berhenti 0
+    0
 }

@@ -1,3 +1,4 @@
 fungsi utama() {
     ubah y = 10
+    cetak(y)
 }
