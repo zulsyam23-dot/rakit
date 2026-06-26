@@ -1,0 +1,30 @@
+// Halaman Koding — Panduan Lengkap
+
+komponen KodingInfo() {
+    tampilkan {
+        <div className="page">
+            <Section judul="Panduan Koding Rakit" deskripsi="Pelajari cara menulis kode Rakit dari dasar" />
+            <div className="two-col">
+                <div>
+                    <h3>"1. Fungsi"</h3>
+                    <CodeBlock judul="Fungsi" kode='fungsi tambah(a: Angka, b: Angka) -> Angka { berhenti a + b }' bahasa="rakit" />
+                    <h3>"2. Komponen"</h3>
+                    <CodeBlock judul="Komponen" kode='komponen Tombol(teks: Teks) { tampilkan { <button>{teks}</button> } }' bahasa="rakit" />
+                    <h3>"3. Hooks"</h3>
+                    <CodeBlock judul="Hooks" kode='keadaan(hitung, aturHitung) = 0; efek(() => { cetak("mount"); }, []);' bahasa="rakit" />
+                </div>
+                <div>
+                    <h3>"Tipe Data"</h3>
+                    <Card judul="Angka" isi="F64 (float 64-bit)" icon="A" />
+                    <Card judul="Teks" isi="String" icon="T" />
+                    <Card judul="BenarSalah" isi="Bool" icon="B" />
+                    <Card judul="Kosong" isi="Void" icon="K" />
+                    <h3>"Common Mistakes"</h3>
+                    <Card judul="struktur → struk" isi="Gunakan 'struk'" icon="!" />
+                    <Card judul="import → impor" isi="Gunakan 'impor'" icon="!" />
+                    <Card judul="return → berhenti" isi="Gunakan 'berhenti'" icon="!" />
+                </div>
+            </div>
+        </div>
+    }
+}

@@ -1,0 +1,25 @@
+// Halaman Rakit — Penjelasan Lengkap
+
+komponen RakitInfo() {
+    tampilkan {
+        <div className="page">
+            <Section judul="Apa itu Rakit?" deskripsi="Bahasa pemrograman modern untuk UI reaktif dalam Bahasa Indonesia" />
+            <div className="two-col">
+                <div>
+                    <h3>"Filosofi"</h3>
+                    <p>"Rakit lahir untuk menurunkan hambatan developer Indonesia dalam pemrograman UI reaktif."</p>
+                    <h3>"Contoh Kode"</h3>
+                    <CodeBlock judul="Hello World" kode='fungsi main() -> I32 { cetak("Halo!"); 0 }' bahasa="rakit" />
+                    <CodeBlock judul="Komponen" kode='komponen Tombol(teks: Teks) { tampilkan { <button>{teks}</button> } }' bahasa="rakit" />
+                </div>
+                <div>
+                    <h3>"Teknologi"</h3>
+                    <Card judul="Compiler" isi="Multi-stage: AST HIR MIR LIR Native" icon="C" />
+                    <Card judul="Type System" isi="Static typing dengan inference" icon="T" />
+                    <Card judul="Optimizer" isi="6 optimization passes" icon="O" />
+                    <Card judul="LSP" isi="9 fitur developer tools" icon="L" />
+                </div>
+            </div>
+        </div>
+    }
+}

@@ -1,0 +1,28 @@
+// Halaman Brak — Language Toolkit
+
+komponen BrakInfo() {
+    tampilkan {
+        <div className="page">
+            <Section judul="Apa itu Brak?" deskripsi="Language Toolkit yang menjadi fondasi compiler Rakit" />
+            <div className="two-col">
+                <div>
+                    <h3>"Pipeline Compiler"</h3>
+                    <CodeBlock judul="Pipeline" kode='Source → Frontend → AST → HIR → MIR → LIR → Backend' bahasa="pipeline" />
+                    <h3>"Komponen Brak"</h3>
+                    <Card judul="brak-frontend" isi="Lexer dan Parser" icon="F" />
+                    <Card judul="brak-ir-ast" isi="Abstract Syntax Tree" icon="A" />
+                    <Card judul="brak-ir-hir" isi="High-level IR" icon="H" />
+                    <Card judul="brak-codegen-obj" isi="Object file generator" icon="O" />
+                </div>
+                <div>
+                    <h3>"Target Backend"</h3>
+                    <Card judul="Native" isi="Windows PE, Linux ELF, macOS MachO" icon="N" />
+                    <Card judul="WebAssembly" isi="WASM text format" icon="W" />
+                    <Card judul="C Code" isi="Generate C code" icon="C" />
+                    <h3>"Optimization"</h3>
+                    <Card judul="DCE + CP + GVN" isi="6 optimization passes" icon="6" />
+                </div>
+            </div>
+        </div>
+    }
+}

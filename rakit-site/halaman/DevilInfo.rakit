@@ -1,0 +1,27 @@
+// Halaman Devil — Package Manager
+
+komponen DevilInfo() {
+    tampilkan {
+        <div className="page">
+            <Section judul="Apa itu Devil?" deskripsi="Package manager profesional untuk ekosistem Rakit" />
+            <div className="two-col">
+                <div>
+                    <h3>"Cara Kerja"</h3>
+                    <Card judul="1. Init" isi="devil init my-project" icon="1" />
+                    <Card judul="2. Install" isi="devil install rakit-ui" icon="2" />
+                    <Card judul="3. Develop" isi="devil dev --open" icon="3" />
+                    <Card judul="4. Build" isi="rakit build main.rakit" icon="4" />
+                </div>
+                <div>
+                    <h3>"Perintah"</h3>
+                    <Card judul="devil init" isi="Buat project baru" icon="I" />
+                    <Card judul="devil install" isi="Install dependencies" icon="I" />
+                    <Card judul="devil dev" isi="Jalankan dev server" icon="D" />
+                    <Card judul="devil build" isi="Build project" icon="B" />
+                    <Card judul="devil search" isi="Cari package" icon="S" />
+                    <Card judul="devil publish" isi="Publish package" icon="P" />
+                </div>
+            </div>
+        </div>
+    }
+}
