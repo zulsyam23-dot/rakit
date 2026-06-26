@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rakit Demo — WASM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e2e8f0; }
+        
+        .navbar { background: rgba(15,23,42,0.95); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-brand { display: flex; align-items: center; gap: 12px; }
+        .logo { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .brand { color: white; font-size: 20px; font-weight: 700; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 32px; }
+        .section { margin-bottom: 48px; }
+        .section-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: white; }
+        .section-desc { color: #94a3b8; margin-bottom: 24px; }
+        
+        .app { background: #1e293b; border-radius: 16px; padding: 32px; border: 1px solid #334155; }
+        .app h1 { font-size: 36px; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+        .app p { color: #94a3b8; }
+        
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 16px; }
+        .card { background: #0f172a; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+        .card h3 { font-size: 16px; margin-bottom: 8px; color: #818cf8; }
+        .card p { color: #94a3b8; font-size: 14px; }
+        
+        .code-block { background: #0f172a; border-radius: 8px; overflow: hidden; margin: 16px 0; }
+        .code-header { background: #1e293b; padding: 8px 16px; }
+        .code-lang { color: #818cf8; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .code-content { padding: 16px; }
+        .code-content code { color: #a6e3a1; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; }
+        
+        .footer { background: #1e293b; padding: 24px 32px; text-align: center; color: #64748b; font-size: 14px; margin-top: 40px; }
+        
+        #status { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; margin-top: 16px; }
+        #status.loading { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        #status.ok { background: rgba(16,185,129,0.2); color: #10b981; }
+        #status.error { background: rgba(239,68,68,0.2); color: #ef4444; }
+        
+        .wasm-info { background: #0f172a; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-top: 24px; }
+        .wasm-info h3 { font-size: 16px; margin-bottom: 12px; color: #818cf8; }
+        .wasm-info p { color: #94a3b8; font-size: 14px; margin-bottom: 8px; }
+        .wasm-info code { background: #1e293b; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a6e3a1; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <div class="logo">R</div>
+            <span class="brand">Rakit</span>
+        </div>
+        <div style="color: #94a3b8; font-size: 14px;">WASM Demo</div>
+    </nav>
+
+    <div class="container">
+        <div class="section">
+            <h1 class="section-title">Rakit WASM Demo</h1>
+            <p class="section-desc">Aplikasi ini dibuat dengan bahasa Rakit dan di-compile ke WebAssembly</p>
+            <div id="status" class="loading">Loading WASM module...</div>
+        </div>
+
+        <div class="section">
+            <div class="app" id="app-content">
+                <h1>Rakit Demo</h1>
+                <p>Aplikasi yang dibuat dengan bahasa Rakit</p>
+                
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>30+ Keyword</h3>
+                        <p>fungsi, komponen, jika, ulang, cocok</p>
+                    </div>
+                    <div class="card">
+                        <h3>Components</h3>
+                        <p>Komponen dengan props dan hooks</p>
+                    </div>
+                    <div class="card">
+                        <h3>Native Binary</h3>
+                        <p>Build ke .exe tanpa runtime</p>
+                    </div>
+                    <div class="card">
+                        <h3>Package Manager</h3>
+                        <p>Devil untuk dependencies</p>
+                    </div>
+                </div>
+                
+                <h2 style="margin: 32px 0 16px; color: white;">Contoh Kode</h2>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">rakit</span></div>
+                    <div class="code-content">
+                        <code>fungsi tambah(a: Angka, b: Angka) -> Angka {
+    berhenti a + b
+}
+
+komponen Tombol(teks: Teks) {
+    tampilkan {
+        &lt;button&gt;{teks}&lt;/button&gt;
+    }
+}</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="wasm-info">
+            <h3>WASM Info</h3>
+            <p>File: <code>examples_bg.wasm</code> (133 KB)</p>
+            <p>JS Glue: <code>examples.js</code> (17 KB)</p>
+            <p>Status: <span id="wasm-status">Loading...</span></p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Dibuat dengan Rakit — Bahasa Pemrograman Modern dalam Bahasa Indonesia</p>
+    </div>
+
+    <script type="module">
+        import init from './examples.js';
+        
+        const status = document.getElementById('status');
+        const wasmStatus = document.getElementById('wasm-status');
+        
+        try {
+            status.textContent = 'Initializing WASM...';
+            wasmStatus.textContent = 'Initializing...';
+            
+            await init();
+            
+            status.textContent = 'WASM loaded successfully! Application is running.';
+            status.className = 'ok';
+            wasmStatus.textContent = 'Loaded and running';
+            wasmStatus.style.color = '#10b981';
+            
+        } catch (e) {
+            status.textContent = 'Error: ' + e.message;
+            status.className = 'error';
+            wasmStatus.textContent = 'Failed to load';
+            wasmStatus.style.color = '#ef4444';
+            console.error('WASM init error:', e);
+        }
+    </script>
+</body>
+</html>

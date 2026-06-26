@@ -162,16 +162,29 @@ impl BuildCommand {
         
         if build_target == "wasm32-unknown-unknown" || build_target == "wasm" {
             // === WASM Build Path ===
+            // Build di luar workspace untuk menghindari workspace conflict
+            let temp_build_dir = std::env::temp_dir().join("rakit-wasm-build");
+            let temp_src_dir = temp_build_dir.join("src");
+            fs::create_dir_all(&temp_src_dir)
+                .map_err(|e| format!("Gagal buat direktori build: {}", e))?;
+
+            // Copy source code ke temp directory
+            fs::copy(&lib_rs_path, temp_src_dir.join("lib.rs"))
+                .map_err(|e| format!("Gagal copy lib.rs: {}", e))?;
+            fs::copy(&cargo_toml_path, temp_build_dir.join("Cargo.toml"))
+                .map_err(|e| format!("Gagal copy Cargo.toml: {}", e))?;
+
             println!("\n=== Kompilasi WASM ===");
             let status = Command::new("cargo")
                 .args(&[
                     "build",
                     "--manifest-path",
-                    &cargo_toml_path.to_string_lossy(),
+                    &temp_build_dir.join("Cargo.toml").to_string_lossy(),
                     "--target",
                     "wasm32-unknown-unknown",
                     "--release",
                 ])
+                .env("CARGO_TARGET_DIR", temp_build_dir.join("target"))
                 .status()
                 .map_err(|e| format!("Gagal jalankan cargo: {}", e))?;
 
@@ -179,7 +192,7 @@ impl BuildCommand {
                 return Err("Kompilasi WASM gagal.".to_string());
             }
 
-            let wasm_dir = build_dir
+            let wasm_dir = temp_build_dir
                 .join("target")
                 .join("wasm32-unknown-unknown")
                 .join("release");
